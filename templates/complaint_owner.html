@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Report - Parking Lot Management</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Similar styling as your contact page */
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: url('{{ url_for('static', filename='picccc.jpg') }}') no-repeat center center/cover;
+      min-height: 100vh;
+      color: #fff;
+      line-height: 1.6;
+    }
+    header {
+      background: rgba(0, 0, 0, 0.85);
+      padding: 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+    header h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+    }
+    nav ul li a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+    nav ul li a:hover {
+      color: #1e3a8a;
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+    main {
+      padding: 4rem 2rem;
+    }
+    section {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 3rem;
+      width: 80%;
+      max-width: 700px;
+      margin: 2rem auto;
+      border-radius: 15px;
+      backdrop-filter: blur(5px);
+      animation: fadeIn 1s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    section h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #1e3a8a;
+      text-align: center;
+    }
+    section p {
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.8rem;
+      border-radius: 8px;
+      border: 2px solid #1e3a8a;
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      resize: vertical;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #172554;
+      box-shadow: 0 0 10px rgba(30, 58, 138, 0.5);
+      background: #fff;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 2rem;
+      background: #1e3a8a;
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(30, 58, 138, 0.4);
+      margin-top: 1rem;
+      width: 100%;
+    }
+    .btn:hover {
+      background: #172554;
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 6px 20px rgba(23, 37, 84, 0.5);
+    }
+    .hidden {
+      display: none;
+    }
+    footer {
+      background: rgba(0, 0, 0, 0.9);
+      padding: 1.5rem;
+      text-align: center;
+      font-size: 0.9rem;
+      position: relative;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🚗 Vehicle Report</h1>
+    <nav>
+      <ul>
+        <li><a href="{{ url_for('index_owner') }}">Home</a></li>
+        <li><a href="{{ url_for('payments_owner') }}">Payments</a></li>
+        <li><a href="{{ url_for('render_register_owner') }}">Register</a></li>
+        <li><a href="{{ url_for('render_contact_owner') }}">Contact</a></li>
+        <li><a href="{{ url_for('render_statistics_owner') }}">Stats</a></li>
+        <li><a href="{{ url_for('complaint_owner') }}">Complaint</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section>
+      <h2>Report a Vehicle Issue</h2>
+      <p>Upload an image of the licence plate. The system will process the image using Plate Recognizer and automatically fill in the licence plate number. Then, select the complaint type and provide any additional details if necessary.</p>
+      <form id="reportForm" action="/submit_complaint" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="plateImage">Upload Licence Plate Image</label>
+          <!-- IMPORTANT: The name attribute must match the app.py field. -->
+          <input type="file" id="plateImage" name="plateImage" accept="image/*" required>
+        </div>
+        <div class="form-group">
+          <label for="licencePlate">Licence Plate Number</label>
+          <input type="text" id="licencePlate" name="licencePlate" placeholder="Licence Plate will be auto-filled" readonly required>
+        </div>
+        <div class="form-group">
+          <label for="complaintType">Complaint Type</label>
+          <select id="complaintType" name="complaintType" required>
+            <option value="">Select a complaint</option>
+            <option value="Obstructed">Obstructed</option>
+            <option value="Damaged">Damaged</option>
+            <option value="Overstayed">Overstayed</option>
+            <option value="Unpaid">Unpaid</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group hidden" id="otherComplaintGroup">
+          <label for="otherComplaint">Please specify</label>
+          <textarea id="otherComplaint" name="otherComplaint" rows="3" placeholder="Enter details here"></textarea>
+        </div>
+        <button type="submit" class="btn">Submit Complaint</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Parking Lot Management. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Step 1: OCR call on file selection
+    document.getElementById("plateImage").addEventListener("change", function() {
+      const file = this.files[0];
+      if (file) {
+        const formData = new FormData();
+        formData.append("plateImage", file);
+        
+        fetch("/ocr_plate", {
+          method: "POST",
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById("licencePlate").value = data.plate;
+          } else {
+            alert("OCR Error: " + data.error);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("An error occurred during OCR processing.");
+        });
+      }
+    });
+
+    // Step 2: Show/hide "Other" complaint textbox
+    document.getElementById("complaintType").addEventListener("change", function() {
+      const otherGroup = document.getElementById("otherComplaintGroup");
+      if (this.value === "Other") {
+        otherGroup.classList.remove("hidden");
+      } else {
+        otherGroup.classList.add("hidden");
+      }
+    });
+  </script>
+</body>
+</html>

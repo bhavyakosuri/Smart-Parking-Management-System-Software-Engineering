@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard - Smart Parking Management</title>
+  <!-- Dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+  />
+  <style>
+    body {
+      background-color: #1a1a2e;
+      color: #ffffff;
+      font-family: "Arial", sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      background: #16213e;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      max-width: 1200px;
+      margin: auto;
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    h2,
+    h3 {
+      text-align: center;
+      color: #00d4ff;
+      margin-bottom: 20px;
+    }
+    .pricing-section,
+    .analysis-section,
+    .report-section {
+      background-color: #1a1a2e;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+    .pricing-section h3,
+    .analysis-section h3,
+    .report-section h3 {
+      margin-top: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th,
+    td {
+      padding: 12px;
+      border: 1px solid #00d4ff;
+      text-align: center;
+    }
+    th {
+      background-color: #1a1a2e;
+      color: #00d4ff;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background-color: #1e2b4a;
+    }
+    input[type="text"] {
+      width: 80px;
+      background: #0f1a34;
+      border: 1px solid #00d4ff;
+      color: #ffffff;
+      border-radius: 4px;
+      padding: 5px;
+    }
+    .btn {
+      padding: 10px 20px;
+      background: #00d4ff;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #00b8e6;
+    }
+    .chart-container {
+      width: 100%;
+      max-width: 800px;
+      margin: 20px auto;
+    }
+    .analysis-details {
+      margin-top: 10px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Admin Dashboard - Smart Parking Management</h2>
+
+    <!-- Pricing Section -->
+    <div class="pricing-section">
+      <h3>Current Pricing Rates</h3>
+      <table id="pricingTable">
+        <thead>
+          <tr>
+            <th>Pricing ID</th>
+            <th>Day Type</th>
+            <th>Time Window</th>
+            <th>Rate/Hour (Rs.)</th>
+            <th>New Rate</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamically filled -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Analysis Section -->
+    <div class="analysis-section">
+      <h3>Booking Analysis</h3>
+      <div class="chart-container">
+        <canvas id="bookingChart"></canvas>
+      </div>
+      <div class="analysis-details" id="analysisDetails"></div>
+    </div>
+
+    <!-- Report Section -->
+    <div class="report-section" style="text-align: center;">
+      <h3>Download Booking Report</h3>
+      <label for="reportStartDate">Start Date:</label>
+      <input type="date" id="reportStartDate" />
+      <label for="reportEndDate">End Date:</label>
+      <input type="date" id="reportEndDate" />
+      <br /><br />
+      <button class="btn" onclick="downloadReport()">Download Report</button>
+      <div id="reportStatus" class="hidden"></div>
+    </div>
+  </div>
+
+  <script>
+    /************************************
+     * FETCH PRICING & DISPLAY IN TABLE *
+     ************************************/
+    function fetchPricing() {
+      fetch("/get_pricing")
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            renderPricingTable(data.rates);
+          } else {
+            console.error("Error fetching pricing:", data.error);
+          }
+        })
+        .catch((err) => console.error("Error:", err));
+    }
+
+    function renderPricingTable(rates) {
+      const tbody = document.getElementById("pricingTable").querySelector("tbody");
+      tbody.innerHTML = rates
+        .map(
+          (rate) => `
+          <tr>
+            <td>${rate.pricing_id}</td>
+            <td>${rate.day_of_week}</td>
+            <td>${rate.time_window}</td>
+            <td>${rate.rate_per_hour.toFixed(2)}</td>
+            <td>
+              <input type="text" id="newRate_${rate.pricing_id}" placeholder="e.g. 65.00" />
+            </td>
+            <td>
+              <button class="btn" onclick="updatePricing(${rate.pricing_id})">Update</button>
+            </td>
+          </tr>
+        `
+        )
+        .join("");
+    }
+
+    function updatePricing(pricingId) {
+      const newRate = document.getElementById("newRate_" + pricingId).value;
+      if (!newRate || isNaN(newRate)) {
+        alert("Please enter a valid numeric rate.");
+        return;
+      }
+      const payload = {
+        pricing_id: pricingId,
+        rate_per_hour: parseFloat(newRate),
+      };
+      fetch("/update_pricing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            alert("Rate updated successfully!");
+            fetchPricing(); // Refresh the table
+          } else {
+            alert("Error updating rate: " + data.error);
+          }
+        })
+        .catch((err) => console.error("Error updating pricing:", err));
+    }
+
+    /************************************
+     * FETCH BOOKING ANALYSIS DATA & CHART
+     ************************************/
+    let bookingChartRef = null;
+    function fetchBookingAnalysis() {
+      fetch("/get_booking_analysis")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            renderBookingChart(data.analysis);
+          } else {
+            console.error("Analysis error:", data.error);
+          }
+        })
+        .catch((err) => console.error("Error fetching analysis:", err));
+    }
+
+    function renderBookingChart(analysisData) {
+      const labels = analysisData.map((item) => item.booking_hour + ":00");
+      const bookings = analysisData.map((item) => item.total_bookings);
+      const avgPrices = analysisData.map((item) =>
+        item.avg_price ? parseFloat(item.avg_price).toFixed(2) : 0
+      );
+
+      // Destroy existing chart if it exists
+      if (bookingChartRef) {
+        bookingChartRef.destroy();
+      }
+      const ctx = document.getElementById("bookingChart").getContext("2d");
+      bookingChartRef = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Total Bookings",
+              data: bookings,
+              backgroundColor: "rgba(0, 212, 255, 0.6)",
+              yAxisID: "yBookings",
+            },
+            {
+              label: "Avg. Price (Rs.)",
+              data: avgPrices,
+              backgroundColor: "rgba(255, 77, 77, 0.6)",
+              yAxisID: "yAvgPrice",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            yBookings: {
+              type: "linear",
+              position: "left",
+              title: {
+                display: true,
+                text: "Total Bookings",
+                color: "#00d4ff",
+              },
+              ticks: {
+                color: "#ffffff",
+                beginAtZero: true,
+              },
+            },
+            yAvgPrice: {
+              type: "linear",
+              position: "right",
+              title: {
+                display: true,
+                text: "Avg. Price (Rs.)",
+                color: "#ff4d4d",
+              },
+              ticks: {
+                color: "#ffffff",
+                beginAtZero: true,
+              },
+              grid: {
+                drawOnChartArea: false,
+              },
+            },
+            x: {
+              ticks: {
+                color: "#ffffff",
+              },
+            },
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: "#ffffff",
+              },
+            },
+          },
+        },
+      });
+
+      // Also display summary details
+      let summaryHtml = "<h4>Analysis Details</h4>";
+      analysisData.forEach((item) => {
+        const hr = item.booking_hour + ":00";
+        const book = item.total_bookings;
+        const price = item.avg_price ? parseFloat(item.avg_price).toFixed(2) : 0;
+        summaryHtml += `<p><strong>${hr}</strong> => Bookings: ${book}, Avg Price: Rs. ${price}</p>`;
+      });
+      document.getElementById("analysisDetails").innerHTML = summaryHtml;
+    }
+
+    /************************************
+     * DOWNLOAD REPORT
+     ************************************/
+    function downloadReport() {
+      const startDate = document.getElementById("reportStartDate").value;
+      const endDate = document.getElementById("reportEndDate").value;
+      if (!startDate || !endDate) {
+        alert("Please select both start and end dates.");
+        return;
+      }
+      fetch(`/download_report?start_date=${startDate}&end_date=${endDate}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            alert(data.message);
+            // If you have a real PDF file to download, you'd handle that differently.
+          } else {
+            alert("Error generating report: " + data.error);
+          }
+        })
+        .catch((err) => console.error("Error downloading report:", err));
+    }
+
+    /************************************
+     * ON PAGE LOAD
+     ************************************/
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchPricing();
+      fetchBookingAnalysis();
+    });
+  </script>
+</body>
+</html>

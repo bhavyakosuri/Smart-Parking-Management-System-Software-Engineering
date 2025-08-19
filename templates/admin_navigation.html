@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Parking Management System</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #f4f4f9;
+    }
+
+    h1 {
+      margin: 20px 0;
+      color: #333;
+    }
+
+    #map {
+      width: 90%;
+      height: 400px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .status-panel {
+      width: 90%;
+      padding: 15px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .status-panel h2 {
+      margin: 0 0 10px;
+      color: #333;
+    }
+
+    .status-panel p {
+      margin: 0;
+      font-size: 1.2em;
+      color: #28a745;
+    }
+
+    .slot-list {
+      width: 90%;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .slot-list h2 {
+      margin: 0 0 10px;
+      color: #333;
+    }
+
+    .slot-list ul {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .slot-list li {
+      padding: 10px;
+      margin: 5px 0;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .slot-list li.available {
+      border-left: 5px solid #28a745;
+    }
+
+    .slot-list li.occupied {
+      border-left: 5px solid #dc3545;
+    }
+
+    .controls {
+      width: 90%;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .controls button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    .controls button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    .modal.show, .modal-overlay.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>Smart Parking Management System</h1>
+  <div id="map"></div>
+
+  <div class="status-panel">
+    <h2>Car Detection Status</h2>
+    <p id="detectionStatus">No car detected.</p>
+  </div>
+
+  <div class="slot-list">
+    <h2>Parking Slot Availability</h2>
+    <ul id="slotList"></ul>
+  </div>
+
+  <div class="controls">
+    <button id="simulateCar">Simulate Car Detection</button>
+    <button id="manualOverride">Manual Override</button>
+  </div>
+
+  <!-- Manual Override Modal -->
+  <div class="modal-overlay" id="modalOverlay"></div>
+  <div class="modal" id="manualOverrideModal">
+    <h2>Manual Override</h2>
+    <label for="slotSelect">Select Slot:</label>
+    <select id="slotSelect">
+      <!-- Options will be populated dynamically -->
+    </select>
+    <br><br>
+    <label for="actionSelect">Action:</label>
+    <select id="actionSelect">
+      <option value="assign">Assign to Vehicle</option>
+      <option value="release">Release Slot</option>
+    </select>
+    <br><br>
+    <button id="confirmOverride">Confirm</button>
+    <button id="cancelOverride">Cancel</button>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Initialize the map
+    const map = L.map('map').setView([11.0168, 76.9558], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Dataset: 10 parking slots and 11 car numbers
+    const parkingSlots = [
+      { id: 'Slot 1', lat: 11.0168, lng: 76.9558, status: 'available', carNumber: null },
+      { id: 'Slot 2', lat: 11.0175, lng: 76.9565, status: 'available', carNumber: null },
+      { id: 'Slot 3', lat: 11.0180, lng: 76.9570, status: 'available', carNumber: null },
+      { id: 'Slot 4', lat: 11.0185, lng: 76.9575, status: 'available', carNumber: null },
+      { id: 'Slot 5', lat: 11.0190, lng: 76.9580, status: 'available', carNumber: null },
+      { id: 'Slot 6', lat: 11.0195, lng: 76.9585, status: 'available', carNumber: null },
+      { id: 'Slot 7', lat: 11.0200, lng: 76.9590, status: 'available', carNumber: null },
+      { id: 'Slot 8', lat: 11.0205, lng: 76.9595, status: 'available', carNumber: null },
+      { id: 'Slot 9', lat: 11.0210, lng: 76.9600, status: 'available', carNumber: null },
+      { id: 'Slot 10', lat: 11.0215, lng: 76.9605, status: 'available', carNumber: null }
+    ];
+
+    const carNumbers = [
+      'CAR-101', 'CAR-102', 'CAR-103', 'CAR-104', 'CAR-105', 
+      'CAR-106', 'CAR-107', 'CAR-108', 'CAR-109', 'CAR-110', 'CAR-111'
+    ];
+
+    // Function to clear all markers from the map
+    function clearMapMarkers() {
+      map.eachLayer(layer => {
+        if (layer instanceof L.Marker) {
+          map.removeLayer(layer);
+        }
+      });
+    }
+
+    // Function to update the map and slot list
+    function updateUI() {
+      const slotList = document.getElementById('slotList');
+      slotList.innerHTML = '';
+
+      // Clear all markers before updating
+      clearMapMarkers();
+
+      parkingSlots.forEach(slot => {
+        // Update map markers
+        const marker = L.marker([slot.lat, slot.lng], {
+          icon: L.icon({
+            iconUrl: slot.status === 'available' ? 'https://cdn-icons-png.flaticon.com/512/484/484167.png' : 'https://cdn-icons-png.flaticon.com/512/1828/1828665.png',
+            iconSize: [32, 32],
+          })
+        }).addTo(map);
+
+        marker.bindPopup(`<b>${slot.id}</b><br>Status: ${slot.status}<br>Car: ${slot.carNumber || 'None'}`);
+
+        // Update slot list
+        const li = document.createElement('li');
+        li.className = slot.status === 'available' ? 'available' : 'occupied';
+        li.innerHTML = `
+          <span><b>${slot.id}</b> - ${slot.status === 'available' ? 'Available' : `Occupied by ${slot.carNumber}`}</span>
+          ${slot.status === 'available' ? `<button onclick="reserveSlot('${slot.id}')">Reserve</button>` : '<button onclick="releaseSlot(\'${slot.id}\')">Release</button>'}
+        `;
+        slotList.appendChild(li);
+      });
+    }
+
+    // Function to simulate car detection
+    function simulateCarDetection() {
+      const availableSlots = parkingSlots.filter(slot => slot.status === 'available');
+      if (availableSlots.length > 0) {
+        // Select a random available slot
+        const randomSlot = availableSlots[Math.floor(Math.random() * availableSlots.length)];
+        // Select a random car number from the list
+        const randomCarNumber = carNumbers[Math.floor(Math.random() * carNumbers.length)];
+        randomSlot.status = 'occupied';
+        randomSlot.carNumber = randomCarNumber;
+        document.getElementById('detectionStatus').textContent = `Car ${randomCarNumber} detected! Assigned to ${randomSlot.id}.`;
+        updateUI();
+      } else {
+        document.getElementById('detectionStatus').textContent = 'No available slots.';
+      }
+    }
+
+    // Function to reserve a slot
+    function reserveSlot(slotId) {
+      const slot = parkingSlots.find(s => s.id === slotId);
+      if (slot && slot.status === 'available') {
+        const randomCarNumber = carNumbers[Math.floor(Math.random() * carNumbers.length)];
+        slot.status = 'occupied';
+        slot.carNumber = randomCarNumber;
+        document.getElementById('detectionStatus').textContent = `Car ${randomCarNumber} assigned to ${slotId}.`;
+        updateUI();
+      }
+    }
+
+    // Function to release a slot
+    function releaseSlot(slotId) {
+      const slot = parkingSlots.find(s => s.id === slotId);
+      if (slot && slot.status === 'occupied') {
+        slot.status = 'available';
+        slot.carNumber = null;
+        document.getElementById('detectionStatus').textContent = `${slotId} released.`;
+        updateUI();
+      }
+    }
+
+    // Manual Override Functions
+    function openManualOverrideModal() {
+      const modal = document.getElementById('manualOverrideModal');
+      const overlay = document.getElementById('modalOverlay');
+      const slotSelect = document.getElementById('slotSelect');
+
+      // Populate slot options
+      slotSelect.innerHTML = '';
+      parkingSlots.forEach(slot => {
+        const option = document.createElement('option');
+        option.value = slot.id;
+        option.textContent = `${slot.id} - ${slot.status}`;
+        slotSelect.appendChild(option);
+      });
+
+      modal.classList.add('show');
+      overlay.classList.add('show');
+    }
+
+    function closeManualOverrideModal() {
+      const modal = document.getElementById('manualOverrideModal');
+      const overlay = document.getElementById('modalOverlay');
+      modal.classList.remove('show');
+      overlay.classList.remove('show');
+    }
+
+    function confirmManualOverride() {
+      const slotId = document.getElementById('slotSelect').value;
+      const action = document.getElementById('actionSelect').value;
+
+      if (action === 'assign') {
+        reserveSlot(slotId);
+      } else if (action === 'release') {
+        releaseSlot(slotId);
+      }
+
+      closeManualOverrideModal();
+    }
+
+    // Event listeners
+    document.getElementById('simulateCar').addEventListener('click', simulateCarDetection);
+    document.getElementById('manualOverride').addEventListener('click', openManualOverrideModal);
+    document.getElementById('confirmOverride').addEventListener('click', confirmManualOverride);
+    document.getElementById('cancelOverride').addEventListener('click', closeManualOverrideModal);
+
+    // Initial UI update
+    updateUI();
+  </script>
+</body>
+</html>

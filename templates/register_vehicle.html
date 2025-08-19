@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register Your Vehicle</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    body {
+      background-color: #1a1a2e;
+      color: #ffffff;
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: #16213e;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      max-width: 450px;
+      width: 100%;
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h2 {
+      color: #00d4ff;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    label {
+      display: block;
+      margin: 15px 0 5px;
+      color: #00d4ff;
+      font-size: 14px;
+    }
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid #00d4ff;
+      background: #1a1a2e;
+      color: #ffffff;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
+      border-color: #00b8e6;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #00d4ff;
+      color: #000;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #00b8e6;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 14px;
+      text-align: center;
+      color: #00d4ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Register Your Vehicle</h2>
+    <form id="vehicleRegistrationForm" action="/register_vehicle" method="POST">
+      <label for="vehicle-number">Vehicle Number</label>
+      <input type="text" id="vehicle-number" name="vehicle_number" placeholder="Enter vehicle registration number" required />
+
+      <label for="vehicle-model">Vehicle Model</label>
+      <input type="text" id="vehicle-model" name="vehicle_model" placeholder="Enter vehicle model" required />
+
+      <label for="vehicle-color">Vehicle Color</label>
+      <input type="text" id="vehicle-color" name="vehicle_color" placeholder="Enter vehicle color" required />
+
+      <label for="registration-year">Registration Year</label>
+      <input type="number" id="registration-year" name="registration_year" placeholder="Enter registration year" required />
+
+      <button type="submit">Register Vehicle</button>
+    </form>
+    <div id="message"></div>
+    <a href="\page1"><button>Home</button></a>
+  </div>
+</body>
+</html>

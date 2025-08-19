@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Entry</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            width: 350px;
+        }
+        #qr-reader {
+            width: 100%;
+            border: 2px solid white;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        input {
+            padding: 12px;
+            margin: 10px 0;
+            width: 90%;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            text-align: center;
+        }
+        button {
+            padding: 12px;
+            width: 100%;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #e68900;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🚗 Smart Parking Entry</h2>
+        <div id="qr-reader"></div>
+        <p id="qr-result">Scan a QR code to authenticate.</p>
+        <input type="text" id="rfid-input" placeholder="Enter RFID Code" />
+        <button onclick="authenticateRFID()">Submit RFID</button>
+        <p id="rfid-result"></p>
+        <a href="\page1"><button style="padding: 8px; background-color: #2a5298; color: white; border-radius: 5px; border-color:transparent;">Home</button></a>
+    </div>
+    
+    <script>function onScanSuccess(qrCodeMessage) {
+        document.getElementById('qr-result').innerText = "✅ QR Code Authenticated: " + qrCodeMessage;
+        alert("Access Granted via QR Code");
+    }
+    
+    function onScanFailure(error) {
+        console.warn(`QR Code scan error: ${error}`); // Fixed syntax error
+    }
+    
+    let html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    
+    function authenticateRFID() {
+        let rfidCode = document.getElementById('rfid-input').value.trim();
+        if (rfidCode) {
+            document.getElementById('rfid-result').innerText = "✅ RFID Authenticated: " + rfidCode;
+            alert("✅ Access Granted via RFID: " + rfidCode);
+            document.getElementById('rfid-input').value = "";
+        } else {
+            document.getElementById('rfid-result').innerText = "❌ Invalid RFID Code";
+            alert("❌ Please enter a valid RFID code.");
+        }
+    }
+    
+    // Request camera permissions on page load
+    navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+        console.log("Camera access granted");
+    }).catch(function(err) {
+        alert("❌ Camera permission denied. Please enable camera access in browser settings.");
+    });
+    
+    </script>
+</body>
+</html>

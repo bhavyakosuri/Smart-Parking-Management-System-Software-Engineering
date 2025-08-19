@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debit Card Payment</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #1a1a2e;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            max-width: 450px;
+            width: 100%;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: #00d4ff;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            color: #00d4ff;
+            font-size: 14px;
+        }
+
+        input[type="datetime-local"], input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border-radius: 8px;
+            border: 1px solid #00d4ff;
+            background: #1a1a2e;
+            color: #ffffff;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #00b8e6;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #00b8e6;
+        }
+
+        #receipt-actions {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #receipt-actions button {
+            width: auto;
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        #receipt-actions button:hover {
+            background: #00b8e6;
+        }
+
+        #receipt-details {
+            margin-top: 20px;
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            color: #00d4ff;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+
+        .info {
+            color: #00d4ff;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Debit Card Payment</h2>
+
+        <label>Start Date and Time</label>
+        <input type="datetime-local" id="start-time" required onchange="calculateBill()">
+        
+        <label>End Date and Time</label>
+        <input type="datetime-local" id="end-time" required onchange="calculateBill()">
+        
+        <div class="info" id="time-duration">Time in Parking Lot: 0 hours</div>
+        <div class="info" id="cost-per-hour">Cost Per Hour: Rs. 0</div>
+        
+        <label>Predicted Bill (Rs.)</label>
+        <input type="number" id="amount" readonly>
+        
+        <label>Payment Method</label>
+        <input type="text" id="payment-method" value="Debit Card" readonly>
+
+        <label>Card Number</label>
+        <input type="text" id="card-number" placeholder="Enter Card Number" required>
+        
+        <label>CVV</label>
+        <input type="text" id="cvv" placeholder="Enter CVV" required>
+        
+        <label>Expiry Date</label>
+        <input type="text" id="expiry-date" placeholder="MM/YY" required>
+        
+        <label>Card Holder Name</label>
+        <input type="text" id="card-holder" placeholder="Enter Card Holder Name" required>
+        
+        <label>Promo Code (Optional)</label>
+        <input type="text" id="promo-code" placeholder="Enter promo code">
+        
+        <button onclick="processPayment()">Proceed to Pay</button>
+
+        <div id="receipt-actions">
+            <button onclick="downloadPDF()">Download Receipt as PDF</button>
+            <button onclick="printReceipt()">Print Receipt</button>
+        </div>
+        
+        <pre id="receipt-details"></pre>
+        <a href="\page1"><button>Home</button></a>
+    </div>
+
+    <script>
+        // Function to calculate the parking bill
+        function calculateBill() {
+            let startTime = document.getElementById("start-time").value;
+            let endTime = document.getElementById("end-time").value;
+    
+            if (!startTime || !endTime) {
+                document.getElementById("amount").value = "";
+                document.getElementById("time-duration").textContent = "Time in Parking Lot: 0 hours";
+                document.getElementById("cost-per-hour").textContent = "Cost Per Hour: Rs. 0";
+                return;
+            }
+    
+            let start = new Date(startTime);
+            let end = new Date(endTime);
+            let diffInHours = Math.abs(end - start) / 36e5; // Convert milliseconds to hours
+    
+            let ratePerHour = 50; // Default rate
+            let dayOfWeek = start.getDay(); // 0 = Sunday, 6 = Saturday
+            let startHour = start.getHours();
+    
+            // Check for weekend rates
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                ratePerHour = 75; // Weekend rate
+            }
+    
+            // Check for peak hours (4 PM to 9 PM)
+            if (startHour >= 16 && startHour < 21) {
+                ratePerHour = 65; // Peak hour rate
+            }
+    
+            let total = diffInHours * ratePerHour;
+            document.getElementById("amount").value = total ? total.toFixed(2) : "";
+            document.getElementById("time-duration").textContent = `Time in Parking Lot: ${diffInHours.toFixed(2)} hours`;
+            document.getElementById("cost-per-hour").textContent = `Cost Per Hour: Rs. ${ratePerHour}`;
+        }
+    
+        // Function to process debit card payment and record the transaction in the DB
+        function processPayment() {
+            let amount = document.getElementById("amount").value;
+            let cardNumber = document.getElementById("card-number").value;
+            let cardHolder = document.getElementById("card-holder").value;
+            let expiryDate = document.getElementById("expiry-date").value;
+            let promoCode = document.getElementById("promo-code").value;
+            let startTime = document.getElementById("start-time").value;
+            let endTime = document.getElementById("end-time").value;
+    
+            if (!amount || !cardNumber || !cardHolder || !expiryDate) {
+                alert("Please fill all required details before proceeding.");
+                return;
+            }
+    
+            let discount = 0;
+            if (promoCode === "DISCOUNT10") {
+                discount = 0.1 * amount; // 10% discount
+            } else if (promoCode === "PARKING") {
+                discount = 0.15 * amount; // 15% discount
+            }
+    
+            let finalAmount = amount - discount;
+    
+            // Build payload with all required details for the backend
+            let payload = {
+                amount: finalAmount,
+                payment_method: "Debit Card",
+                promo_code: promoCode,
+                card_number: cardNumber,
+                card_holder: cardHolder,
+                expiry_date: expiryDate,
+                start_time: startTime,
+                end_time: endTime
+            };
+    
+            fetch("/process_debit_payment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Build the receipt details string
+                    let breakdownMessage = `
+    Payment Receipt
+    -------------------
+    Start Time: ${startTime}
+    End Time: ${endTime}
+    Time in Parking Lot: ${document.getElementById("time-duration").textContent.split(": ")[1]}
+    Cost Per Hour: ${document.getElementById("cost-per-hour").textContent.split(": ")[1]}
+    Total Bill: Rs. ${amount}
+    Discount Applied: Rs. ${discount.toFixed(2)}
+    Final Payable Amount: Rs. ${finalAmount.toFixed(2)}
+    Payment Method: Debit Card
+    Card Holder: ${cardHolder}
+    Card Number: **** **** **** ${cardNumber.slice(-4)}
+    Expiry Date: ${expiryDate}
+                    `;
+                    alert("Payment Successful! Transaction recorded.\n" + breakdownMessage);
+                    document.getElementById("receipt-details").textContent = breakdownMessage;
+                    document.getElementById("receipt-actions").style.display = "block";
+                } else {
+                    alert("Payment Failed: " + data.error);
+                }
+            })
+            .catch(error => console.error("Error processing payment:", error));
+        }
+    
+        // Function to download receipt as PDF
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            let doc = new jsPDF();
+            let receiptText = document.getElementById("receipt-details").textContent;
+            doc.setFont("courier");
+            doc.text(receiptText, 10, 10);
+            doc.save("payment_receipt.pdf");
+        }
+    
+        // Function to print receipt
+        function printReceipt() {
+            let receiptText = document.getElementById("receipt-details").textContent;
+            let printWindow = window.open('', '', 'width=600,height=600');
+            printWindow.document.write('<pre>' + receiptText + '</pre>');
+            printWindow.document.close();
+            printWindow.print();
+        }
+    </script>
+    
+</body>
+</html>

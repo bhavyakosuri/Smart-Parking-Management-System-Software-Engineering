@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Wallet Payment</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body {
+      background-color: #1a1a2e;
+      color: #ffffff;
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: #16213e;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      max-width: 450px;
+      width: 100%;
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h2 {
+      color: #00d4ff;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    label {
+      display: block;
+      margin: 15px 0 5px;
+      color: #00d4ff;
+      font-size: 14px;
+    }
+    input[type="datetime-local"],
+    input[type="number"],
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid #00d4ff;
+      background: #1a1a2e;
+      color: #ffffff;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+    }
+    input[type="datetime-local"]:focus,
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    select:focus {
+      border-color: #00b8e6;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #00d4ff;
+      color: #000;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #00b8e6;
+    }
+    #wallet-balance {
+      font-weight: bold;
+    }
+    #register-vehicle-link {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #register-vehicle-link a {
+      color: #00d4ff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    /* Styles for the receipt display (same as other pages) */
+    #receipt-actions {
+      display: none;
+      margin-top: 20px;
+      text-align: center;
+    }
+    #receipt-actions button {
+      width: auto;
+      padding: 10px 20px;
+      margin: 0 10px;
+      background: #00d4ff;
+      color: #000;
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+    #receipt-actions button:hover {
+      background: #00b8e6;
+    }
+    #receipt-details {
+      margin-top: 20px;
+      background: #1a1a2e;
+      padding: 15px;
+      border-radius: 8px;
+      color: #00d4ff;
+      white-space: pre-wrap;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Digital Wallet Payment</h2>
+
+    <!-- Start and End Time Inputs -->
+    <label for="start-time">Start Date and Time</label>
+    <input type="datetime-local" id="start-time" required onchange="calculateBill()">
+
+    <label for="end-time">End Date and Time</label>
+    <input type="datetime-local" id="end-time" required onchange="calculateBill()">
+
+    <label for="amount">Predicted Bill (Rs.)</label>
+    <input type="number" id="amount" readonly>
+
+    <p>Wallet Balance: Rs. <span id="wallet-balance">Loading...</span></p>
+
+    <!-- Vehicle Dropdown (Populated Dynamically) -->
+    <label for="vehicle-select">Select Your Registered Vehicle</label>
+    <select id="vehicle-select">
+      <!-- Options will be inserted dynamically -->
+    </select>
+    <div id="register-vehicle-link">
+      <p><a href="/register_vehicle">Register your vehicle now</a></p>
+    </div>
+
+    <label for="promo-code">Promo Code (Optional)</label>
+    <input type="text" id="promo-code" placeholder="Enter promo code">
+
+    <button onclick="processPayment()">Proceed to Pay</button>
+    <!-- Home Button -->
+    <button onclick="window.location.href='/page1'">Home</button>
+
+    <!-- Receipt Section -->
+    <div id="receipt-actions">
+      <button onclick="downloadPDF()">Download Receipt as PDF</button>
+      <button onclick="printReceipt()">Print Receipt</button>
+    </div>
+    <pre id="receipt-details"></pre>
+  </div>
+
+  <script>
+    let walletBalance = 0;
+
+    // Fetch registered vehicles for the logged-in user
+    fetch("/get_user_vehicles")
+      .then(response => response.json())
+      .then(data => {
+        const vehicleSelect = document.getElementById("vehicle-select");
+        vehicleSelect.innerHTML = "";
+        if (data.vehicles.length === 0) {
+          let option = document.createElement("option");
+          option.textContent = "No vehicle registered";
+          option.value = "";
+          vehicleSelect.appendChild(option);
+        } else {
+          data.vehicles.forEach(vehicle => {
+            let option = document.createElement("option");
+            option.value = vehicle;
+            option.textContent = vehicle;
+            vehicleSelect.appendChild(option);
+          });
+        }
+      })
+      .catch(err => console.error("Error fetching vehicles:", err));
+
+    // Fetch current wallet balance for the logged-in user
+    fetch("/get_wallet_balance")
+      .then(response => response.json())
+      .then(data => {
+        walletBalance = data.balance;
+        document.getElementById("wallet-balance").textContent = walletBalance;
+      })
+      .catch(err => console.error("Error fetching wallet balance:", err));
+
+    // Function to calculate the parking bill based on start/end time
+    function calculateBill() {
+      let startTime = document.getElementById("start-time").value;
+      let endTime = document.getElementById("end-time").value;
+      if (!startTime || !endTime) {
+        document.getElementById("amount").value = "";
+        return;
+      }
+      let start = new Date(startTime);
+      let end = new Date(endTime);
+      let diffInHours = Math.abs(end - start) / 36e5; // Convert milliseconds to hours
+
+      let ratePerHour = 50; // Default rate
+      let dayOfWeek = start.getDay(); // 0 = Sunday, 6 = Saturday
+      let startHour = start.getHours();
+
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        ratePerHour = 75; // Weekend rate
+      }
+      if (startHour >= 16 && startHour < 21) {
+        ratePerHour = 65; // Peak hour rate
+      }
+
+      let total = diffInHours * ratePerHour;
+      document.getElementById("amount").value = total ? total.toFixed(2) : "";
+    }
+
+    // Function to process digital wallet payment and record the transaction
+    function processPayment() {
+      let amount = parseFloat(document.getElementById("amount").value);
+      let promoCode = document.getElementById("promo-code").value;
+      let paymentMethod = "Digital Wallet";
+      let vehicleSelect = document.getElementById("vehicle-select");
+      let selectedVehicle = vehicleSelect.value;
+      let startTime = document.getElementById("start-time").value;
+      let endTime = document.getElementById("end-time").value;
+
+      if (!selectedVehicle) {
+        alert("Please register your vehicle before making a payment.");
+        return;
+      }
+      if (!amount || amount <= 0) {
+        alert("Please enter a valid parking duration.");
+        return;
+      }
+
+      let discount = 0;
+      if (promoCode === "DISCOUNT10") {
+        discount = 0.1 * amount;
+      } else if (promoCode === "PARKING") {
+        discount = 0.15 * amount;
+      }
+      let finalAmount = amount - discount;
+
+      if (walletBalance < finalAmount) {
+        alert("Insufficient wallet balance!");
+        return;
+      }
+
+      // Build payload with wallet payment details
+      let payload = {
+        amount: finalAmount,
+        payment_method: paymentMethod,
+        promo_code: promoCode,
+        start_time: startTime,
+        end_time: endTime
+      };
+
+      fetch("/process_wallet_payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              let breakdownMessage = `
+Payment Receipt
+-------------------
+Start Time: ${startTime}
+End Time: ${endTime}
+Total Bill: Rs. ${amount}
+Discount Applied: Rs. ${discount.toFixed(2)}
+Final Payable Amount: Rs. ${finalAmount.toFixed(2)}
+Payment Method: Digital Wallet
+Vehicle: ${selectedVehicle}
+              `;
+              alert("Payment Successful! Remaining wallet balance: Rs. " + data.remaining_balance + "\n" + breakdownMessage);
+              document.getElementById("receipt-details").textContent = breakdownMessage;
+              document.getElementById("receipt-actions").style.display = "block";
+          } else {
+              alert("Payment Failed: " + data.error);
+          }
+      })
+      .catch(error => console.error("Error processing payment:", error));
+    }
+
+    // Function to download receipt as PDF
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        let doc = new jsPDF();
+        let receiptText = document.getElementById("receipt-details").textContent;
+        doc.setFont("courier");
+        doc.text(receiptText, 10, 10);
+        doc.save("payment_receipt.pdf");
+    }
+
+    // Function to print receipt
+    function printReceipt() {
+        let receiptText = document.getElementById("receipt-details").textContent;
+        let printWindow = window.open('', '', 'width=600,height=600');
+        printWindow.document.write('<pre>' + receiptText + '</pre>');
+        printWindow.document.close();
+        printWindow.print();
+    }
+  </script>
+</body>
+</html>

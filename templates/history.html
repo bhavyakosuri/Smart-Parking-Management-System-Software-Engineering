@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking History & Loyalty Program</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #1a1a2e;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            max-width: 800px;
+            width: 100%;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: #00d4ff;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            color: #00d4ff;
+            font-size: 14px;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border-radius: 8px;
+            border: 1px solid #00d4ff;
+            background: #1a1a2e;
+            color: #ffffff;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            border-color: #00b8e6;
+            outline: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #00b8e6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #00d4ff;
+        }
+
+        th {
+            background-color: #1a1a2e;
+            color: #00d4ff;
+        }
+
+        tr:hover {
+            background-color: #1a1a2e;
+        }
+
+        #export-options {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #export-options button {
+            margin: 0 10px;
+        }
+
+        .loyalty-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #1a1a2e;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .loyalty-section h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+
+        .loyalty-section p {
+            font-size: 16px;
+        }
+
+        .loyalty-section button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Parking History & Loyalty Program</h2>
+
+        <!-- Search and Filter Section -->
+        <div>
+            <label for="search">Search by Date or Location:</label>
+            <input type="text" id="search" placeholder="Enter date or location">
+            <button onclick="filterHistory()">Search</button>
+        </div>
+
+        <!-- Parking History Table -->
+        <table id="history-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Location</th>
+                    <th>Hours</th>
+                    <th>Amount (Rs.)</th>
+                    <th>Payment Method</th>
+                    <th>Points Earned</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Example Data -->
+                <tr>
+                    <td>2023-10-01</td>
+                    <td>Main Parking Lot</td>
+                    <td>2</td>
+                    <td>100</td>
+                    <td>UPI</td>
+                    <td>10</td>
+                </tr>
+                <tr>
+                    <td>2023-10-05</td>
+                    <td>City Center Parking</td>
+                    <td>4</td>
+                    <td>200</td>
+                    <td>Debit Card</td>
+                    <td>20</td>
+                </tr>
+                <tr>
+                    <td>2023-10-10</td>
+                    <td>Airport Parking</td>
+                    <td>6</td>
+                    <td>300</td>
+                    <td>Credit Card</td>
+                    <td>30</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Export Options -->
+        <div id="export-options">
+            <button onclick="exportToPDF()">Export to PDF</button>
+            <button onclick="exportToCSV()">Export to CSV</button>
+        </div>
+
+        <!-- Loyalty Program Section -->
+        <div class="loyalty-section">
+            <h3>Loyalty Program</h3>
+            <p>Total Points Earned: <span id="total-points">60</span></p>
+            <p>Redeem your points for discounts!</p>
+            <button onclick="redeemPoints()">Redeem Points</button>
+        </div>
+    </div>
+
+    <script>
+        // Function to filter parking history
+        function filterHistory() {
+            let searchTerm = document.getElementById("search").value.toLowerCase();
+            let rows = document.querySelectorAll("#history-table tbody tr");
+
+            rows.forEach(row => {
+                let date = row.cells[0].textContent.toLowerCase();
+                let location = row.cells[1].textContent.toLowerCase();
+                if (date.includes(searchTerm) || location.includes(searchTerm)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+
+        // Function to export history to PDF
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let table = document.getElementById("history-table");
+            let rows = table.querySelectorAll("tr");
+
+            let data = [];
+            rows.forEach(row => {
+                let rowData = [];
+                row.querySelectorAll("th, td").forEach(cell => {
+                    rowData.push(cell.textContent);
+                });
+                data.push(rowData);
+            });
+
+            doc.autoTable({
+                head: [data[0]],
+                body: data.slice(1),
+            });
+
+            doc.save("parking_history.pdf");
+        }
+
+        // Function to export history to CSV
+        function exportToCSV() {
+            let table = document.getElementById("history-table");
+            let rows = table.querySelectorAll("tr");
+
+            let csv = [];
+            rows.forEach(row => {
+                let rowData = [];
+                row.querySelectorAll("th, td").forEach(cell => {
+                    rowData.push(cell.textContent);
+                });
+                csv.push(rowData.join(","));
+            });
+
+            let csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "parking_history.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+
+        // Function to calculate total loyalty points
+        function calculateTotalPoints() {
+            let rows = document.querySelectorAll("#history-table tbody tr");
+            let totalPoints = 0;
+            rows.forEach(row => {
+                totalPoints += parseInt(row.cells[5].textContent);
+            });
+            document.getElementById("total-points").textContent = totalPoints;
+        }
+
+        // Function to redeem loyalty points
+        function redeemPoints() {
+            let totalPoints = parseInt(document.getElementById("total-points").textContent);
+            if (totalPoints >= 50) {
+                alert(`You have successfully redeemed ${totalPoints} points for a 10% discount on your next payment!`);
+                document.getElementById("total-points").textContent = 0; // Reset points after redemption
+            } else {
+                alert("You need at least 50 points to redeem a discount.");
+            }
+        }
+
+        // Calculate total points on page load
+        calculateTotalPoints();
+    </script>
+</body>
+</html>

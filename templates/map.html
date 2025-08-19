@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Parking Slots with Map & Fancy Time Picker</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- Flatpickr CSS (for fancy date/time pickers) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <!-- Bootstrap CSS (optional for styling) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 20px auto;
+    }
+    #map {
+      width: 100%;
+      height: 400px;
+      margin-bottom: 20px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+    }
+    table {
+      background-color: #ffffff;
+      width: 100%;
+    }
+    .reservations-list {
+      font-size: 0.9rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1 class="text-center mb-4">Parking Slots</h1>
+  <!-- Map Section -->
+  <div id="map"></div>
+
+  <!-- Slots Table -->
+  <table class="table" id="slotTable">
+    <thead>
+      <tr>
+        <th>Slot ID</th>
+        <th>Slot Name</th>
+        <th>Reservations</th>
+        <th>Reserve From</th>
+        <th>Reserve To</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Filled by JS -->
+    </tbody>
+  </table>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<!-- Bootstrap JS (optional) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  let map;
+  let slots = [];
+  let reservations = [];
+
+  // 1) On page load
+  document.addEventListener("DOMContentLoaded", async () => {
+    // Make sure 10 random slots exist if table is empty
+    await fetch("/init_parking_slots").catch(err => console.error(err));
+    // Then fetch the slot data & reservations
+    await fetchData();
+    initMap();
+    renderMapMarkers();
+    renderSlots();
+  });
+
+  // 2) Fetch slot data & reservations
+  async function fetchData() {
+    try {
+      const [slotsRes, reservRes] = await Promise.all([
+        fetch("/get_parking_slots").then(r => r.json()),
+        fetch("/get_slot_reservations").then(r => r.json())
+      ]);
+      slots = slotsRes;
+      reservations = reservRes;
+    } catch(err) {
+      console.error("Error fetching data:", err);
+    }
+  }
+
+  // 3) Initialize the Leaflet map
+  function initMap() {
+    map = L.map("map").setView([11.0168, 76.9558], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors"
+    }).addTo(map);
+  }
+
+  // 4) Place markers on the map
+  function renderMapMarkers() {
+    // Remove old markers if any
+    map.eachLayer(layer => {
+      if (layer instanceof L.Marker) {
+        map.removeLayer(layer);
+      }
+    });
+    slots.forEach(slot => {
+      const marker = L.marker([slot.lat, slot.lng]).addTo(map);
+      marker.bindPopup(`<b>${slot.slot_name}</b><br>Slot ID: ${slot.slot_id}`);
+    });
+  }
+
+  // 5) Render the table of slots
+  function renderSlots() {
+    const tbody = document.getElementById("slotTable").querySelector("tbody");
+    tbody.innerHTML = slots.map(slot => {
+      // Find all reservations for this slot
+      const slotRes = reservations.filter(r => r.slot_id === slot.slot_id);
+      // Build a small list of existing reservations
+      const resHTML = slotRes.map(r => {
+        const startStr = r.start_time ? formatDateTime(r.start_time) : "";
+        const endStr = r.end_time ? formatDateTime(r.end_time) : "";
+        return `<div>${startStr} - ${endStr} <small>(by ${r.user_email})</small></div>`;
+      }).join("") || "<em>No reservations</em>";
+
+      // Default "from" is now, "to" is +1 hour
+      const nowLocal = toLocalInput(new Date());
+      const plus1hLocal = toLocalInput(new Date(Date.now() + 3600000));
+
+      return `
+        <tr>
+          <td>${slot.slot_id}</td>
+          <td>${slot.slot_name}</td>
+          <td class="reservations-list">${resHTML}</td>
+          <td><input type="text" class="datetime" id="start_${slot.slot_id}" value="${nowLocal}" /></td>
+          <td><input type="text" class="datetime" id="end_${slot.slot_id}" value="${plus1hLocal}" /></td>
+          <td>
+            <button class="btn btn-primary btn-sm" onclick="reserveSlot(${slot.slot_id})">Reserve</button>
+            <button class="btn btn-success btn-sm" onclick="getDirections(${slot.lat}, ${slot.lng})">Directions</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    // Initialize Flatpickr on all .datetime inputs
+    document.querySelectorAll(".datetime").forEach(el => {
+      flatpickr(el, {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",  // Display format in the picker
+      });
+    });
+  }
+
+  // 6) Convert existing reservations to a nice string
+  function formatDateTime(isoString) {
+    // isoString like "2023-03-21T10:30:00"
+    // Convert to local for display
+    const d = new Date(isoString);
+    return d.toLocaleString(); // e.g. "3/21/2023, 10:30:00 AM"
+  }
+
+  // 7) Convert JS Date -> local input format "YYYY-MM-DD HH:MM"
+  function toLocalInput(dateObj) {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth()+1).padStart(2,"0");
+    const day = String(dateObj.getDate()).padStart(2,"0");
+    const hh = String(dateObj.getHours()).padStart(2,"0");
+    const mm = String(dateObj.getMinutes()).padStart(2,"0");
+    return `${year}-${month}-${day} ${hh}:${mm}`;
+  }
+
+  // 8) Reserve a slot
+  async function reserveSlot(slotId) {
+    const startInput = document.getElementById(`start_${slotId}`);
+    const endInput = document.getElementById(`end_${slotId}`);
+    if (!startInput.value || !endInput.value) {
+      alert("Please pick both start and end times.");
+      return;
+    }
+    // Convert these "YYYY-MM-DD HH:MM" into MySQL-friendly "YYYY-MM-DD HH:MM:SS"
+    const reservedFrom = toMySQLDateTime(startInput.value);
+    const reservedTo = toMySQLDateTime(endInput.value);
+
+    try {
+      const res = await fetch("/reserve_slot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slot_id: slotId,
+          reserved_from: reservedFrom,
+          reserved_to: reservedTo
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Slot reserved successfully!");
+        await fetchData();
+        renderMapMarkers();
+        renderSlots();
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch(err) {
+      console.error("Error reserving slot:", err);
+    }
+  }
+
+  // 9) Convert "YYYY-MM-DD HH:MM" -> "YYYY-MM-DD HH:MM:SS" for MySQL
+  function toMySQLDateTime(str) {
+    // str is like "2023-03-21 10:30"
+    // Insert ":00" for seconds
+    if (!str.includes(":")) return str + ":00"; 
+    // If it already has hours:minutes, add :00 at the end
+    return str + ":00";
+  }
+
+  // 10) Directions via Google Maps
+  function getDirections(lat, lng) {
+    if (!lat || !lng) {
+      alert("No coordinates for this slot.");
+      return;
+    }
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
+        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${lat},${lng}&travelmode=driving`;
+        window.open(googleMapsUrl, "_blank");
+      }, () => {
+        alert("Unable to retrieve your location. Please enable location services.");
+      });
+    } else {
+      alert("Geolocation not supported by your browser.");
+    }
+  }
+</script>
+</body>
+</html>

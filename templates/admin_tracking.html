@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Payment Tracking & Analytics</title>
+  <!-- Load jsPDF and Chart.js from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    body {
+      background-color: #1a1a2e;
+      color: #ffffff;
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: #16213e;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      max-width: 1200px;
+      width: 100%;
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h2 {
+      color: #00d4ff;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 28px;
+    }
+    label {
+      display: block;
+      margin: 15px 0 5px;
+      color: #00d4ff;
+      font-size: 14px;
+    }
+    input[type="text"],
+    input[type="date"],
+    select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid #00d4ff;
+      background: #1a1a2e;
+      color: #ffffff;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+    }
+    input:focus,
+    select:focus {
+      border-color: #00b8e6;
+      outline: none;
+    }
+    button {
+      padding: 10px 20px;
+      background: #00d4ff;
+      color: #000;
+      border: none;
+      margin-top: 10px;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #00b8e6;
+    }
+    .filter-group {
+      margin-bottom: 20px;
+    }
+    .filter-group > * {
+      margin-bottom: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      display: none;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #00d4ff;
+    }
+    th {
+      background-color: #1a1a2e;
+      color: #00d4ff;
+    }
+    tr:hover {
+      background-color: #1a1a2e;
+    }
+    .analytics-section {
+      margin-top: 30px;
+      padding: 20px;
+      background: #1a1a2e;
+      border-radius: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+    }
+    .analytics-section .card {
+      flex: 1 1 250px;
+      background: #16213e;
+      padding: 15px;
+      margin: 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .analytics-section .card h3 {
+      color: #00d4ff;
+      margin-bottom: 10px;
+    }
+    .chart-container {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+    }
+    .chart-box {
+      background: #1a1a2e;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px;
+      flex: 1 1 350px;
+    }
+    .alert {
+      padding: 10px;
+      background: #ff4d4d;
+      color: #000;
+      border-radius: 8px;
+      margin-top: 10px;
+      text-align: center;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Admin Dashboard</h2>
+
+    <!-- Filter Section -->
+    <div class="filter-group">
+      <label for="filter-user">Filter by User:</label>
+      <input type="text" id="filter-user" placeholder="Enter user email" />
+
+      <label for="filter-method">Filter by Payment Method:</label>
+      <select id="filter-method">
+        <option value="">All Methods</option>
+        <option value="UPI">UPI</option>
+        <option value="Debit Card">Debit Card</option>
+        <option value="Credit Card">Credit Card</option>
+        <option value="Digital Wallet">Digital Wallet</option>
+      </select>
+
+      <label for="report-timeframe">Report Timeframe:</label>
+      <select id="report-timeframe" onchange="reportTimeframeChanged()">
+        <option value="all">All</option>
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="last_week">Last 1 Week (includes today)</option>
+        <option value="last_month">Last 1 Month</option>
+        <option value="custom">Custom Range</option>
+      </select>
+
+      <div id="custom-range" style="display:none;">
+        <label for="custom-start">Start Date:</label>
+        <input type="date" id="custom-start" />
+        <label for="custom-end">End Date:</label>
+        <input type="date" id="custom-end" />
+      </div>
+
+      <button onclick="applyReportFilters()">Apply Filters</button>
+      <button onclick="clearFilters()">Clear Filters</button>
+    </div>
+
+    <!-- Transactions Table -->
+    <table id="transactions-table">
+      <thead>
+        <tr>
+          <th>User Email</th>
+          <th>Start Date</th>
+          <th>Amount (Rs.)</th>
+          <th>Payment Method</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <!-- Fraud Detection Alert -->
+    <div id="fraud-alerts" class="alert" style="display: none;" onclick="showFraudTransactions()">
+      <strong>Fraud Alert:</strong> Suspicious transaction detected! Click to view.
+    </div>
+
+    <!-- Revenue Analytics Section -->
+    <div class="analytics-section">
+      <div class="card">
+        <h3>Total Revenue</h3>
+        <p>Rs. <span id="total-revenue">0</span></p>
+      </div>
+      <div class="card">
+        <h3>Transactions</h3>
+        <p><span id="transactions-count">0</span></p>
+      </div>
+      <div class="card">
+        <h3>Average Transaction Value</h3>
+        <p>Rs. <span id="average-transaction">0</span></p>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="chart-container">
+      <div class="chart-box">
+        <canvas id="revenueChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <canvas id="methodChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <canvas id="transactionsChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Download Report Button -->
+    <button onclick="downloadReportPDF()">Download Report as PDF</button>
+  </div>
+
+  <script>
+    console.log("Chart.js version:", Chart.version); // should output 4.4.8
+  
+    let transactions = [];
+    let filteredTransactions = [];
+  
+    // Utility: Convert tx.start_time to a Date object and return YYYY-MM-DD string
+    function getStartDate(tx) {
+      const d = new Date(tx.start_time);
+      if (isNaN(d.getTime())) return "";
+      return d.toISOString().substring(0,10);
+    }
+  
+    // Fetch transactions from backend endpoint /get_transactions
+    function getTransactions() {
+      fetch("/get_transactions")
+        .then(response => response.json())
+        .then(data => {
+          transactions = data;
+          console.log("Fetched transactions:", transactions);
+          // Apply default timeframe: All
+          applyPredefinedTimeframe("all");
+        })
+        .catch(err => console.error("Error fetching transactions:", err));
+    }
+  
+    // Populate the transactions table
+    function populateTable(data) {
+      const tableBody = document.querySelector("#transactions-table tbody");
+      tableBody.innerHTML = data.map(tx => `
+        <tr>
+          <td>${tx.user_email}</td>
+          <td>${getStartDate(tx)}</td>
+          <td>${tx.amount}</td>
+          <td>${tx.transaction_mode}</td>
+          <td>${tx.status}</td>
+        </tr>
+      `).join("");
+      document.getElementById("transactions-table").style.display = data.length ? "table" : "none";
+    }
+  
+    // Apply report filters based on timeframe and additional filters
+    function applyReportFilters() {
+      const timeframe = document.getElementById("report-timeframe").value;
+      const customStart = document.getElementById("custom-start").value;
+      const customEnd = document.getElementById("custom-end").value;
+      const userFilter = document.getElementById("filter-user").value.toLowerCase();
+      const methodFilter = document.getElementById("filter-method").value;
+  
+      let startDate, endDate;
+      const today = new Date();
+      if (timeframe === "all") {
+        startDate = new Date("1970-01-01");
+        endDate = today;
+      } else if (timeframe === "today") {
+        startDate = new Date(today.toISOString().substring(0,10));
+        endDate = new Date(startDate);
+      } else if (timeframe === "yesterday") {
+        startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 1);
+        startDate = new Date(startDate.toISOString().substring(0,10));
+        endDate = new Date(startDate);
+      } else if (timeframe === "last_week") {
+        endDate = new Date(today.toISOString().substring(0,10));
+        startDate = new Date(endDate);
+        startDate.setDate(startDate.getDate() - 6);
+      } else if (timeframe === "last_month") {
+        endDate = new Date(today.toISOString().substring(0,10));
+        startDate = new Date(endDate);
+        startDate.setMonth(startDate.getMonth() - 1);
+      } else if (timeframe === "custom") {
+        if (!customStart || !customEnd) {
+          alert("Please select both custom start and end dates.");
+          return;
+        }
+        startDate = new Date(customStart);
+        endDate = new Date(customEnd);
+      }
+      console.log("Filtering from", startDate, "to", endDate);
+  
+      filteredTransactions = transactions.filter(tx => {
+        const txDate = new Date(getStartDate(tx));
+        const dateMatch = txDate >= startDate && txDate <= endDate;
+        const userMatch = userFilter === "" || tx.user_email.toLowerCase().includes(userFilter);
+        const methodMatch = methodFilter === "" || tx.transaction_mode === methodFilter;
+        return dateMatch && userMatch && methodMatch;
+      });
+  
+      populateTable(filteredTransactions);
+      checkForFraud(filteredTransactions);
+      updateAnalytics(filteredTransactions);
+      updateRevenueChart(filteredTransactions);
+      updateMethodChart(filteredTransactions);
+      updateTransactionsChart(filteredTransactions);
+    }
+  
+    // Predefined timeframe filter (for initial load)
+    function applyPredefinedTimeframe(timeframe) {
+      document.getElementById("report-timeframe").value = timeframe;
+      document.getElementById("custom-range").style.display = (timeframe === "custom") ? "block" : "none";
+      document.getElementById("filter-user").value = "";
+      document.getElementById("filter-method").value = "";
+      applyReportFilters();
+    }
+  
+    // When report timeframe changes, show/hide custom range inputs
+    function reportTimeframeChanged() {
+      const timeframe = document.getElementById("report-timeframe").value;
+      document.getElementById("custom-range").style.display = (timeframe === "custom") ? "block" : "none";
+    }
+  
+    // Clear all filters
+    function clearFilters() {
+      document.getElementById("filter-user").value = "";
+      document.getElementById("filter-method").value = "";
+      document.getElementById("filter-date").value = "";
+      applyPredefinedTimeframe("all");
+    }
+  
+    // Check for fraudulent transactions (example: amount > 1000 and status "successful", case-insensitive)
+    function checkForFraud(data) {
+      const fraudDetected = data.some(tx => parseFloat(tx.amount) > 1000 && (""+tx.status).toLowerCase() === "successful");
+      document.getElementById("fraud-alerts").style.display = fraudDetected ? "block" : "none";
+    }
+  
+    // Show only fraudulent transactions
+    function showFraudTransactions() {
+      const fraudData = filteredTransactions.filter(tx => parseFloat(tx.amount) > 1000 && (""+tx.status).toLowerCase() === "successful");
+      populateTable(fraudData);
+    }
+  
+    // Update revenue analytics based on filtered data
+    function updateAnalytics(data) {
+      const totalRevenue = data.reduce((sum, tx) => sum + (((""+tx.status).toLowerCase() === "successful") ? parseFloat(tx.amount) : 0), 0);
+      const transactionsCount = data.length;
+      const averageTransaction = transactionsCount > 0 ? totalRevenue / transactionsCount : 0;
+      document.getElementById("total-revenue").textContent = totalRevenue.toFixed(2);
+      document.getElementById("transactions-count").textContent = transactionsCount;
+      document.getElementById("average-transaction").textContent = averageTransaction.toFixed(2);
+    }
+  
+    // Update revenue trends line chart using Chart.js (using start_time)
+    function updateRevenueChart(data) {
+      const datesSet = new Set(data.map(tx => getStartDate(tx)));
+      const dates = Array.from(datesSet).sort();
+      const revenueByDate = dates.map(date => {
+        return data.filter(tx => getStartDate(tx) === date && (""+tx.status).toLowerCase() === "successful")
+                   .reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+      });
+      console.log("Revenue Chart Data:", dates, revenueByDate);
+      const ctx = document.getElementById("revenueChart").getContext("2d");
+      if (window.revenueChart && typeof window.revenueChart.destroy === "function") {
+        window.revenueChart.destroy();
+      }
+      window.revenueChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: dates,
+          datasets: [{
+            label: "Revenue (Rs.)",
+            data: revenueByDate,
+            borderColor: "#00d4ff",
+            backgroundColor: "rgba(0, 212, 255, 0.1)",
+            fill: true,
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              title: { display: true, text: "Start Date", color: "#00d4ff" },
+              ticks: { color: "#ffffff" }
+            },
+            y: {
+              title: { display: true, text: "Revenue (Rs.)", color: "#00d4ff" },
+              ticks: { color: "#ffffff" }
+            }
+          },
+          plugins: {
+            legend: { labels: { color: "#ffffff" } }
+          }
+        }
+      });
+    }
+  
+    // Update pie chart for payment method distribution using Chart.js
+    function updateMethodChart(data) {
+      const methods = data.map(tx => tx.transaction_mode);
+      const methodCounts = methods.reduce((counts, method) => {
+        counts[method] = (counts[method] || 0) + 1;
+        return counts;
+      }, {});
+      const labels = Object.keys(methodCounts);
+      const counts = Object.values(methodCounts);
+      const ctx = document.getElementById("methodChart").getContext("2d");
+      if (window.methodChart && typeof window.methodChart.destroy === "function") {
+        window.methodChart.destroy();
+      }
+      window.methodChart = new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Payment Methods",
+            data: counts,
+            backgroundColor: ["#00d4ff", "#ffcc00", "#ff4d4d", "#66ff66"]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: "#ffffff" } }
+          }
+        }
+      });
+    }
+  
+    // Update bar chart for transactions count per day using Chart.js
+    function updateTransactionsChart(data) {
+      const datesSet = new Set(data.map(tx => getStartDate(tx)));
+      const dates = Array.from(datesSet).sort();
+      const transactionsByDate = dates.map(date => {
+        return data.filter(tx => getStartDate(tx) === date).length;
+      });
+      const ctx = document.getElementById("transactionsChart").getContext("2d");
+      if (window.transactionsChart && typeof window.transactionsChart.destroy === "function") {
+        window.transactionsChart.destroy();
+      }
+      window.transactionsChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: dates,
+          datasets: [{
+            label: "Number of Transactions",
+            data: transactionsByDate,
+            backgroundColor: "#ffcc00"
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              title: { display: true, text: "Start Date", color: "#00d4ff" },
+              ticks: { color: "#ffffff" }
+            },
+            y: {
+              title: { display: true, text: "Transactions", color: "#00d4ff" },
+              ticks: { color: "#ffffff", beginAtZero: true }
+            }
+          },
+          plugins: {
+            legend: { labels: { color: "#ffffff" } }
+          }
+        }
+      });
+    }
+  
+    // Generate and download a polished PDF report using jsPDF
+    async function downloadReportPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF("p", "mm", "a4");
+  
+      // Header & Analytics
+      doc.setFontSize(20);
+      doc.setTextColor(0, 86, 179);
+      doc.text("Payment Report", 10, 15);
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.line(10, 18, 200, 18);
+  
+      doc.text(`Total Revenue: Rs. ${document.getElementById("total-revenue").textContent}`, 10, 30);
+      doc.text(`Transactions: ${document.getElementById("transactions-count").textContent}`, 10, 40);
+      doc.text(`Average Transaction Value: Rs. ${document.getElementById("average-transaction").textContent}`, 10, 50);
+  
+      // Capture chart images
+      const revenueChartImg = await getChartImage(document.getElementById("revenueChart"));
+      const methodChartImg = await getChartImage(document.getElementById("methodChart"));
+      const transactionsChartImg = await getChartImage(document.getElementById("transactionsChart"));
+  
+      doc.text("Revenue Trends", 10, 60);
+      doc.addImage(revenueChartImg, "PNG", 10, 65, 180, 80);
+  
+      doc.text("Payment Methods Distribution", 10, 150);
+      doc.addImage(methodChartImg, "PNG", 10, 155, 90, 80);
+  
+      doc.text("Transactions per Day", 110, 150);
+      doc.addImage(transactionsChartImg, "PNG", 110, 155, 90, 80);
+  
+      doc.save("Payment_Report.pdf");
+    }
+  
+    // Utility: Get chart image as Base64 using canvas.toDataURL()
+    function getChartImage(canvasElement) {
+      return new Promise(resolve => {
+        resolve(canvasElement.toDataURL("image/png", 1.0));
+      });
+    }
+  
+    // Fetch transactions on page load
+    getTransactions();
+  </script>  
+</body>
+</html>

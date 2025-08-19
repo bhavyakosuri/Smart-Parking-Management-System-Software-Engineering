@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Data Export</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .export-options {
+            margin-bottom: 20px;
+        }
+        .export-options button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .export-options button:hover {
+            background-color: #0056b3;
+        }
+        .audit-logs {
+            margin-top: 20px;
+        }
+        .audit-logs h2 {
+            margin-bottom: 10px;
+        }
+        .audit-logs table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .audit-logs th, .audit-logs td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .audit-logs th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard - Data Export</h1>
+
+        <!-- Data Export Options -->
+        <div class="export-options">
+            <button onclick="exportData('csv')">Export as CSV</button>
+            <button onclick="exportData('pdf')">Export as PDF</button>
+            <button onclick="exportData('excel')">Export as Excel</button>
+        </div>
+
+        <!-- Scheduled Exports -->
+        <div class="scheduled-exports">
+            <h2>Scheduled Exports</h2>
+            <label for="schedule-frequency">Schedule Export:</label>
+            <select id="schedule-frequency">
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+            </select>
+            <button onclick="scheduleExport()">Schedule</button>
+        </div>
+
+        <!-- Audit Logs -->
+        <div class="audit-logs">
+            <h2>Audit Logs</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="audit-log-body">
+                    <!-- Audit logs will be populated here dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Function to handle data export
+        function exportData(format) {
+            alert(Exporting data as ${format.toUpperCase()}...);
+            // Here you would make an API call to the backend to generate the export
+            // Example: fetch(/api/export?format=${format}).then(response => response.blob()).then(blob => {
+            //     const url = window.URL.createObjectURL(blob);
+            //     const a = document.createElement('a');
+            //     a.href = url;
+            //     a.download = data_export.${format};
+            //     a.click();
+            // });
+        }
+
+        // Function to schedule exports
+        function scheduleExport() {
+            const frequency = document.getElementById('schedule-frequency').value;
+            alert(Scheduled ${frequency} export.);
+            // Here you would make an API call to the backend to schedule the export
+            // Example: fetch(/api/schedule-export?frequency=${frequency});
+        }
+
+        // Function to load audit logs
+        function loadAuditLogs() {
+            // Here you would make an API call to fetch audit logs
+            // Example: fetch('/api/audit-logs').then(response => response.json()).then(data => {
+            //     const logBody = document.getElementById('audit-log-body');
+            //     logBody.innerHTML = data.map(log => `
+            //         <tr>
+            //             <td>${log.timestamp}</td>
+            //             <td>${log.user}</td>
+            //             <td>${log.action}</td>
+            //             <td>${log.details}</td>
+            //         </tr>
+            //     `).join('');
+            // });
+        }
+
+        // Load audit logs on page load
+        window.onload = loadAuditLogs;
+    </script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login & Signup</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #1a1a2e;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            max-width: 400px;
+            width: 100%;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: #00d4ff;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            color: #00d4ff;
+            font-size: 14px;
+        }
+
+        input[type="text"], input[type="password"], input[type="email"], input[type="tel"] {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border-radius: 8px;
+            border: 1px solid #00d4ff;
+            background: #1a1a2e;
+            color: #ffffff;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #00b8e6;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #00b8e6;
+        }
+
+        .switch-form {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .switch-form a {
+            color: #00d4ff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .switch-form a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            color: #ff4d4d;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="login-container">
+        <h2>Admin Login</h2>
+        <form id="login-form">
+            <label for="login-username">Username</label>
+            <input type="text" id="login-username" placeholder="Enter username" required>
+            
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Enter password" required>
+            
+            <button type="submit">Login</button>
+        </form>
+        <div class="switch-form">
+            <p>Don't have an account? <a href="#" id="switch-to-signup">Signup</a></p>
+        </div>
+        <div class="error-message" id="login-error"></div>
+    </div>
+
+    <div class="container" id="signup-container" style="display: none;">
+        <h2>Admin Signup</h2>
+        <form id="signup-form">
+            <label for="signup-fullname">Full Name</label>
+            <input type="text" id="signup-fullname" placeholder="Enter full name" required>
+            
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" placeholder="Enter email" required>
+            
+            <label for="signup-phone">Phone Number</label>
+            <input type="tel" id="signup-phone" placeholder="Enter phone number" required>
+            
+            <label for="signup-username">Username</label>
+            <input type="text" id="signup-username" placeholder="Enter username" required>
+            
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" placeholder="Enter password" required>
+            
+            <label for="confirm-password">Confirm Password</label>
+            <input type="password" id="confirm-password" placeholder="Confirm password" required>
+            
+            <button type="submit">Signup</button>
+        </form>
+        <div class="switch-form">
+            <p>Already have an account? <a href="#" id="switch-to-login">Login</a></p>
+        </div>
+        <div class="error-message" id="signup-error"></div>
+    </div>
+
+    <script>
+        // Admin credentials stored in localStorage
+        const ADMIN_KEY = "adminCredentials";
+
+        // Get DOM elements
+        const loginContainer = document.getElementById("login-container");
+        const signupContainer = document.getElementById("signup-container");
+        const loginForm = document.getElementById("login-form");
+        const signupForm = document.getElementById("signup-form");
+        const switchToSignup = document.getElementById("switch-to-signup");
+        const switchToLogin = document.getElementById("switch-to-login");
+        const loginError = document.getElementById("login-error");
+        const signupError = document.getElementById("signup-error");
+
+        // Switch between login and signup forms
+        switchToSignup.addEventListener("click", (e) => {
+            e.preventDefault();
+            loginContainer.style.display = "none";
+            signupContainer.style.display = "block";
+        });
+
+        switchToLogin.addEventListener("click", (e) => {
+            e.preventDefault();
+            signupContainer.style.display = "none";
+            loginContainer.style.display = "block";
+        });
+
+        // Handle login form submission
+        loginForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const username = document.getElementById("login-username").value;
+            const password = document.getElementById("login-password").value;
+
+            const adminCredentials = JSON.parse(localStorage.getItem(ADMIN_KEY));
+
+            if (adminCredentials && adminCredentials.username === username && adminCredentials.password === password) {
+                alert("Login successful! Redirecting to admin dashboard...");
+                window.location.href = "admin-dashboard.html"; // Redirect to admin dashboard
+            } else {
+                loginError.textContent = "Invalid username or password.";
+            }
+        });
+
+        // Handle signup form submission
+        signupForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const fullName = document.getElementById("signup-fullname").value;
+            const email = document.getElementById("signup-email").value;
+            const phone = document.getElementById("signup-phone").value;
+            const username = document.getElementById("signup-username").value;
+            const password = document.getElementById("signup-password").value;
+            const confirmPassword = document.getElementById("confirm-password").value;
+
+            if (password !== confirmPassword) {
+                signupError.textContent = "Passwords do not match.";
+                return;
+            }
+
+            const adminCredentials = {
+                fullName,
+                email,
+                phone,
+                username,
+                password
+            };
+            localStorage.setItem(ADMIN_KEY, JSON.stringify(adminCredentials));
+
+            alert("Signup successful! Please login.");
+            signupContainer.style.display = "none";
+            loginContainer.style.display = "block";
+            signupError.textContent = "";
+        });
+    </script>
+</body>
+</html>

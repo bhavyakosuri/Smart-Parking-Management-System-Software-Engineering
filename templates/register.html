@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registration Page - Dark Mode</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Basic styling */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: url('picccc.jpg') no-repeat center center/cover; min-height: 100vh; color: #fff; }
+    .container { width: 100%; max-width: 400px; padding: 2rem; background: rgba(31, 41, 55, 0.9); border-radius: 0.5rem; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+    h2 { text-align: center; font-size: 1.75rem; margin-bottom: 1rem; }
+    label { display: block; margin-bottom: 0.25rem; font-weight: 600; }
+    input[type="text"], input[type="email"], input[type="password"], input[type="tel"], input[type="date"], input[type="number"] {
+      width: 100%; padding: 0.75rem; margin-bottom: 0.5rem; border: 1px solid #4B5563; border-radius: 0.375rem; background: #374151;
+    }
+    .btn { width: 100%; padding: 0.75rem; background: #2563EB; color: #fff; text-align: center; border: none; border-radius: 0.375rem; font-weight: 600; margin-top: 1rem; }
+    .btn:hover { background: #1D4ED8; }
+    .error { color: #F87171; font-size: 0.875rem; margin-top: 0.25rem; }
+    .hidden { display: none; }
+    .radio-group { text-align: center; margin-bottom: 1rem; }
+    .radio-group label { margin-right: 1rem; font-weight: 600; }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+  <div class="container">
+    <h2>Register</h2>
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="role" value="user" checked> Register as User
+      </label>
+      <label>
+        <input type="radio" name="role" value="owner"> Register as Parking Lot Owner
+      </label>
+    </div>
+    <!-- Note: Removed onsubmit attribute from form tag -->
+    <form id="registrationForm" method="POST" action="/register">
+      <!-- User Registration Fields -->
+      <div id="userFields">
+        <div>
+          <label for="licence">Licence Number</label>
+          <input type="text" id="licence" name="licence" placeholder="Enter your licence number" required>
+          <p id="licenceError" class="error hidden">Invalid Licence Number.</p>
+        </div>
+        <div>
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" placeholder="Enter your name" required>
+          <p id="nameError" class="error hidden">Name should not contain special characters.</p>
+        </div>
+        <div>
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="Enter your email" required>
+          <p id="emailError" class="error hidden">Please enter a valid email.</p>
+        </div>
+        <div>
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        </div>
+        <div>
+          <label for="confirmPassword">Confirm Password</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+          <p id="passwordError" class="error hidden">Passwords do not match.</p>
+        </div>
+        <div>
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required>
+          <p id="phoneError" class="error hidden">Phone number must be exactly 10 digits.</p>
+        </div>
+        <div>
+          <label for="dob">Date of Birth</label>
+          <input type="date" id="dob" name="dob" required>
+          <p id="ageError" class="error hidden">You must be at least 18 years old.</p>
+        </div>
+      </div>
+      
+      <!-- Parking Lot Owner Registration Fields -->
+      <div id="ownerFields" class="hidden">
+        <div>
+          <label for="lot-name">Parking Lot Name</label>
+          <input type="text" id="lot-name" name="lot-name" placeholder="Enter parking lot name">
+        </div>
+        <div>
+          <label for="location">Location</label>
+          <input type="text" id="location" name="location" placeholder="Enter full address">
+        </div>
+        <div>
+          <label for="capacity">Capacity</label>
+          <input type="number" id="capacity" name="capacity" placeholder="Number of spaces">
+        </div>
+        <div>
+          <label for="owner-name">Owner Name</label>
+          <input type="text" id="owner-name" name="owner-name" placeholder="Enter your full name">
+        </div>
+        <div>
+          <label for="owner-phone">Contact Number</label>
+          <input type="tel" id="owner-phone" name="owner-phone" placeholder="Enter your phone number">
+        </div>
+        <div>
+          <label for="owner-email">Email</label>
+          <input type="email" id="owner-email" name="owner-email" placeholder="Enter your email">
+        </div>
+        <div>
+          <label for="pricing">Pricing per Hour</label>
+          <input type="number" id="pricing" name="pricing" placeholder="Enter amount in $">
+        </div>
+        <div>
+          <label for="amenities">Amenities (Optional)</label>
+          <input type="text" id="amenities" name="amenities" placeholder="e.g., CCTV, Security, Charging">
+        </div>
+      </div>
+      
+      <button type="submit" class="btn">Register</button>
+    </form>
+    <p class="text-center text-sm mt-4">
+      Already a user? <a href="/login" class="text-blue-400 hover:underline">Sign in here</a>
+    </p>
+  </div>
+
+  <script>
+    // Get form and elements.
+    const registrationForm = document.getElementById("registrationForm");
+    const roleRadios = document.querySelectorAll('input[name="role"]');
+    const userFields = document.getElementById("userFields");
+    const ownerFields = document.getElementById("ownerFields");
+
+    // Toggle form fields and action based on role selection.
+    roleRadios.forEach(radio => {
+      radio.addEventListener("change", function() {
+        if (this.value === "user") {
+          userFields.classList.remove("hidden");
+          ownerFields.classList.add("hidden");
+          registrationForm.action = "/register";
+          console.log("Switched to user registration");
+        } else if (this.value === "owner") {
+          ownerFields.classList.remove("hidden");
+          userFields.classList.add("hidden");
+          registrationForm.action = "/register_owner";
+          console.log("Switched to owner registration");
+        }
+      });
+    });
+
+    // Form submission handler.
+    registrationForm.addEventListener("submit", function(event) {
+      const role = document.querySelector('input[name="role"]:checked').value;
+      console.log("Form submission initiated for role:", role);
+      if (role === "user") {
+        // Perform user validations.
+        let licence = document.getElementById("licence").value;
+        let name = document.getElementById("name").value;
+        let email = document.getElementById("email").value;
+        let password = document.getElementById("password").value;
+        let confirmPassword = document.getElementById("confirmPassword").value;
+        let phone = document.getElementById("phone").value;
+        let dob = document.getElementById("dob").value;
+        let licenceError = document.getElementById("licenceError");
+        let nameError = document.getElementById("nameError");
+        let emailError = document.getElementById("emailError");
+        let passwordError = document.getElementById("passwordError");
+        let phoneError = document.getElementById("phoneError");
+        let ageError = document.getElementById("ageError");
+        let isValid = true;
+
+        if (!/^[A-Z0-9-]{5,15}$/.test(licence)) {
+          licenceError.classList.remove("hidden");
+          isValid = false;
+        } else {
+          licenceError.classList.add("hidden");
+        }
+
+        if (!/^[A-Za-z ]+$/.test(name)) {
+          nameError.classList.remove("hidden");
+          isValid = false;
+        } else {
+          nameError.classList.add("hidden");
+        }
+
+        if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+          emailError.classList.remove("hidden");
+          isValid = false;
+        } else {
+          emailError.classList.add("hidden");
+        }
+
+        if (password !== confirmPassword) {
+          passwordError.classList.remove("hidden");
+          isValid = false;
+        } else {
+          passwordError.classList.add("hidden");
+        }
+
+        if (!/^\d{10}$/.test(phone)) {
+          phoneError.classList.remove("hidden");
+          isValid = false;
+        } else {
+          phoneError.classList.add("hidden");
+        }
+
+        let birthDate = new Date(dob);
+        let today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        let monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        
+        if (age < 18) {
+          ageError.classList.remove("hidden");
+          isValid = false;
+        } else {
+          ageError.classList.add("hidden");
+        }
+        
+        if (!isValid) {
+          event.preventDefault();
+          console.log("User registration validations failed.");
+          return false;
+        } else {
+          console.log("User registration validations passed.");
+        }
+      } else if (role === "owner") {
+        // For owner registration, you can add separate validations if needed.
+        // For now, simply allow submission.
+        console.log("Owner registration: form will submit without additional validations.");
+      }
+      // Allow the form to submit.
+      return true;
+    });
+  </script>
+</body>
+</html>

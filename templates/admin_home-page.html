@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Smart Parking System</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+  <link
+    rel="stylesheet"
+    as="style"
+    onload="this.rel='stylesheet'"
+    href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Work+Sans%3Awght%40400%3B500%3B700%3B900"
+  />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    body {
+      background-color: #111118;
+      font-family: "Work Sans", "Noto Sans", sans-serif;
+    }
+    .header-buttons {
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      transition: color 0.3s ease-in-out;
+    }
+    .header-buttons:hover {
+      color: #00bfff;
+    }
+  </style>
+</head>
+<body>
+  <div class="relative flex size-full min-h-screen flex-col bg-[#111118] dark overflow-x-hidden">
+    <div class="layout-container flex h-full grow flex-col">
+      
+      <!-- Header -->
+      <header class="flex items-center justify-between border-b border-[#ccc] px-6 py-3 bg-white w-full">
+        <div class="flex items-center gap-4">
+          <div class="size-4">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- SVG Paths Here -->
+            </svg>
+          </div>
+          <h2 class="text-black text-lg font-bold">ParkSmart Admin</h2>
+        </div>
+        <div class="flex flex-1 justify-end gap-8">
+          <div class="flex items-center gap-6">
+
+            <!-- Dropdown for Dashboard -->
+            <div class="relative inline-block text-left">
+              <button id="dashboardButton" class="block px-4 py-2 hover:bg-gray-300 rounded-md">
+                Dashboard 
+              </button>
+              <div id="navigationDropdown" class="absolute hidden bg-white text-black shadow-lg rounded-md mt-1 w-40">
+                <a href="/admin_dashboard" class="block px-4 py-2 hover:bg-gray-200">Dashboard</a>
+                <a href="/admin_dataexport" class="block px-4 py-2 hover:bg-gray-200">Export</a>
+              </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <a class="text-black text-sm font-medium transition duration-300 hover:bg-gray-300 px-3 py-2 rounded-md" href="/admin_tracking">
+              Tracking
+            </a>
+            
+            <a class="text-black text-sm font-medium hover:bg-gray-300 px-3 py-2 rounded-md" href="/admin_navigation">
+              Navigation
+            </a>
+
+            <a class="text-black text-sm font-medium transition duration-300 hover:bg-gray-300 px-3 py-2 rounded-md" href="/admin_datainsights">
+              Insights
+            </a>
+
+            <!-- Notifications Button -->
+         
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <div class="px-6 sm:px-10 flex flex-1 justify-center py-5">
+        <div class="layout-content-container flex flex-col max-w-[1200px] flex-1">
+          <div class="@container">
+            <div class="@[480px]:p-4">
+              <div
+                class="flex min-h-[300px] sm:min-h-[400px] flex-col gap-6 bg-cover bg-center bg-no-repeat 
+                       @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center px-4 pb-10 
+                       @[480px]:px-10 transition-all duration-300 hover:animate-pulse text-center"
+                style='background-image: linear-gradient(rgba(49, 49, 49, 0.3) 0%, rgba(0, 0, 0, 0.4) 100%), 
+                       url("https://img.freepik.com/premium-photo/blur-focus-underground-car-park-large-department-store_78212-416.jpg");'
+              >
+                <h1 class="text-white text-3xl sm:text-5xl font-black">
+                  Welcome back, <span id="adminName">Admin</span>!
+                </h1>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer class="bg-[#111118] text-white py-6 flex justify-center">
+        <div class="max-w-6xl w-full px-4 flex flex-col items-center text-center">
+          <h3 class="text-xl font-bold text-[#00bfff]">Smart Parking Admin</h3>
+          <p class="text-sm text-[#9d9db8] mt-2">
+            Efficiently manage your parking system with our comprehensive admin tools.
+          </p>
+        </div>
+      </footer>
+      
+      <!-- Welcome Text -->
+      <div class="text-center text-4xl font-extrabold text-[#00bfff] uppercase tracking-wider animate-pulse mt-10">
+        Welcome Back!
+      </div>
+      
+    </div>
+  </div>
+
+  <script>
+    // Toggle Dropdown for Dashboard
+    document.getElementById("dashboardButton").addEventListener("click", function () {
+      var dropdown = document.getElementById("navigationDropdown");
+      dropdown.classList.toggle("hidden");
+    });
+
+    // Redirect to Notifications Page
+    document.getElementById("notificationsButton").addEventListener("click", function () {
+      window.location.href = "/notifications";
+    });
+  </script>
+</body>
+</html>

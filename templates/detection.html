@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Detection System</title>
+  <style>
+    /* Modern Dark Theme with Improved UI */
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background-color: #1e1e1e;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      width: 450px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 25px;
+      font-size: 28px;
+      color: #007bff;
+    }
+
+    .section {
+      margin-bottom: 25px;
+      padding: 20px;
+      background-color: #2c2c2c;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    h2 {
+      margin-bottom: 15px;
+      font-size: 20px;
+      color: #007bff;
+    }
+
+    input {
+      width: calc(100% - 20px);
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #444;
+      border-radius: 5px;
+      background-color: #333;
+      color: #ffffff;
+      font-size: 16px;
+    }
+
+    input:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .result {
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .success {
+      color: #4caf50;
+    }
+
+    .error {
+      color: #ff4444;
+    }
+
+    .notification {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #333;
+      border-radius: 5px;
+      font-size: 14px;
+      color: #ffffff;
+      display: none; /* Hidden by default */
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Vehicle Detection System</h1>
+
+    <!-- License Plate Recognition -->
+    <div class="section">
+      <h2>AI-Based License Plate Recognition</h2>
+      <input type="text" id="licensePlateInput" placeholder="Enter or Scan License Plate Number">
+      <button onclick="detectVehicle()">Detect Vehicle</button>
+      <p id="licensePlateResult" class="result"></p>
+    </div>
+
+    <!-- RFID/NFC Tag-Based Vehicle Entry -->
+    <div class="section">
+      <h2>RFID/NFC Tag-Based Vehicle Entry</h2>
+      <input type="text" id="rfidInput" placeholder="Enter or Scan RFID/NFC Tag ID">
+      <button onclick="scanTag()">Scan Tag</button>
+      <p id="rfidResult" class="result"></p>
+    </div>
+
+    <!-- Cloud-Based Authentication -->
+    <div class="section">
+      <h2>Cloud-Based Authentication</h2>
+      <input type="text" id="usernameInput" placeholder="Username">
+      <input type="password" id="passwordInput" placeholder="Password">
+      <button onclick="login()">Login</button>
+      <p id="loginResult" class="result"></p>
+    </div>
+
+    <!-- Notification Section -->
+    <div id="notification" class="notification"></div>
+    <a href="\page1"><button style="padding: 8px; background-color: #2a5298; color: white; border-radius: 5px; border-color:transparent;">Home</button></a>
+  </div>
+
+  <script>
+    // Predefined data
+    const licensePlates = ["KA01AB1234", "KA02CD5678"];
+    const rfidTags = ["RFID123", "RFID456"];
+    const validCredentials = { username: "user1", password: "pass1" };
+
+    // License Plate Recognition
+    function detectVehicle() {
+      const input = document.getElementById("licensePlateInput").value.trim();
+      const resultElement = document.getElementById("licensePlateResult");
+
+      if (licensePlates.includes(input)) {
+        resultElement.textContent = "Vehicle detected successfully!";
+        resultElement.className = "result success";
+        sendNotification("Vehicle detected successfully! A notification has been sent to your registered email/phone number.");
+      } else {
+        resultElement.textContent = "Error: License plate not recognized.";
+        resultElement.className = "result error";
+      }
+    }
+
+    // RFID/NFC Tag Validation
+    function scanTag() {
+      const input = document.getElementById("rfidInput").value.trim();
+      const resultElement = document.getElementById("rfidResult");
+
+      if (rfidTags.includes(input)) {
+        resultElement.textContent = "RFID/NFC tag validated successfully!";
+        resultElement.className = "result success";
+        sendNotification("RFID/NFC tag validated successfully! A notification has been sent to your registered email/phone number.");
+      } else {
+        resultElement.textContent = "Error: Invalid RFID/NFC tag.";
+        resultElement.className = "result error";
+      }
+    }
+
+    // Cloud-Based Authentication
+    function login() {
+      const username = document.getElementById("usernameInput").value.trim();
+      const password = document.getElementById("passwordInput").value.trim();
+      const resultElement = document.getElementById("loginResult");
+
+      if (username === validCredentials.username && password === validCredentials.password) {
+        resultElement.textContent = "Login successful!";
+        resultElement.className = "result success";
+      } else {
+        resultElement.textContent = "Error: Invalid username or password.";
+        resultElement.className = "result error";
+      }
+    }
+
+    // Simulate sending a notification
+    function sendNotification(message) {
+      const notificationElement = document.getElementById("notification");
+      notificationElement.textContent = message;
+      notificationElement.style.display = "block"; // Show notification
+      setTimeout(() => {
+        notificationElement.style.display = "none"; // Hide notification after 5 seconds
+      }, 5000);
+    }
+
+    // Simulate scanning functionality
+    document.getElementById("licensePlateInput").addEventListener("input", (e) => {
+      simulateScan(e.target, "licensePlateInput");
+    });
+
+    document.getElementById("rfidInput").addEventListener("input", (e) => {
+      simulateScan(e.target, "rfidInput");
+    });
+
+    function simulateScan(inputElement, id) {
+      // Simulate a scanner by auto-triggering the detection after a delay
+      setTimeout(() => {
+        if (id === "licensePlateInput") {
+          detectVehicle();
+        } else if (id === "rfidInput") {
+          scanTag();
+        }
+      }, 1000); // Simulate a 1-second delay for scanning
+    }
+  </script>
+</body>
+</html>

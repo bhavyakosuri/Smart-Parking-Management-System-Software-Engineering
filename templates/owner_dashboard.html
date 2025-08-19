@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Owner Dashboard - Daily Payments</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Inline CSS for the owner dashboard */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: url('picccc.jpg') no-repeat center center/cover;
+      color: #fff;
+      padding: 2rem;
+    }
+    header { text-align: center; margin-bottom: 2rem; }
+    .container {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 2rem;
+      border-radius: 15px;
+      max-width: 800px;
+      margin: auto;
+    }
+    h2 { text-align: center; color: #ffcc00; }
+    .form-group {
+      margin: 1rem 0;
+      text-align: center;
+    }
+    .form-group input[type="date"] {
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    .btn {
+      padding: 0.7rem 1.5rem;
+      background: #ffcc00;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin: 0.5rem;
+    }
+    .btn:hover { background: #ff9900; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2rem;
+    }
+    table, th, td { border: 1px solid #ffcc00; }
+    th, td { padding: 0.8rem; text-align: center; }
+    th { background: #ffcc00; color: #1a1a1a; }
+    footer { text-align: center; margin-top: 2rem; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🚗 Owner Dashboard</h1>
+    <nav>
+      <ul>
+        <li><a href="{{ url_for('owner_dashboard') }}">Home</a></li>
+        <li><a href="{{ url_for('render_register_owner') }}">Register</a></li>
+        <li><a href="{{ url_for('render_contact_owner') }}">Contact</a></li>
+        <li><a href="{{ url_for('render_statistics_owner') }}">Stats</a></li>
+      </ul>
+    </nav>
+  </header>
+  <div class="container">
+    <h2>Daily Payments Review</h2>
+    <div class="form-group">
+      <label for="datePicker">Select Date: </label>
+      <input type="date" id="datePicker">
+      <button class="btn" id="fetchBtn">Fetch Payments</button>
+      <button class="btn" id="downloadBtn">Download Report</button>
+    </div>
+    <table id="paymentsTable">
+      <thead>
+        <tr>
+          <th>Transaction Type</th>
+          <th>Total Amount</th>
+          <th>Owner Share (60%)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be dynamically inserted here -->
+      </tbody>
+    </table>
+  </div>
+  <footer>
+    <p>&copy; 2025 Parking Lot Management. All rights reserved.</p>
+  </footer>
+  <script>
+    document.getElementById("fetchBtn").addEventListener("click", function() {
+      const date = document.getElementById("datePicker").value;
+      if (!date) {
+        alert("Please select a date.");
+        return;
+      }
+      fetch(`/get_owner_payments?date=${date}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const tbody = document.getElementById("paymentsTable").getElementsByTagName("tbody")[0];
+            tbody.innerHTML = "";
+            data.payments.forEach(item => {
+              const row = document.createElement("tr");
+              row.innerHTML = `<td>${item.transaction_type}</td>
+                               <td>${item.total_amount}</td>
+                               <td>${item.owner_share}</td>`;
+              tbody.appendChild(row);
+            });
+          } else {
+            alert(data.error || "Failed to fetch payments.");
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("An error occurred.");
+        });
+    });
+
+    document.getElementById("downloadBtn").addEventListener("click", function() {
+      const date = document.getElementById("datePicker").value;
+      if (!date) {
+        alert("Please select a date to download report.");
+        return;
+      }
+      window.open(`/download_report?start_date=${date}&end_date=${date}`, '_blank');
+    });
+  </script>
+</body>
+</html>

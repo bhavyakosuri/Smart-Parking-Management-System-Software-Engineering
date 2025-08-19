@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Payment</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        
+        body {
+            background-color: #1a1a2e;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            max-width: 450px;
+            width: 100%;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: #00d4ff;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            color: #00d4ff;
+            font-size: 14px;
+        }
+
+        input[type="number"], input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border-radius: 8px;
+            border: 1px solid #00d4ff;
+            background: #1a1a2e;
+            color: #ffffff;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="number"]:focus, input[type="text"]:focus, select:focus {
+            border-color: #00b8e6;
+            outline: none;
+        }
+
+        .payment-methods {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .payment-method {
+            flex: 1 1 calc(50% - 15px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            border: 1px solid #00d4ff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        .payment-method:hover {
+            background: rgba(0, 212, 255, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .payment-method input[type="radio"] {
+            display: none;
+        }
+
+        .payment-method i {
+            margin-right: 10px;
+            font-size: 20px;
+            color: #00d4ff;
+        }
+
+        .payment-method span {
+            font-size: 14px;
+            color: #ffffff;
+        }
+
+        #payment-details-container {
+            margin-top: 20px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #00b8e6;
+        }
+
+        #receipt-actions {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #receipt-actions button {
+            width: auto;
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        #receipt-actions button:hover {
+            background: #00b8e6;
+        }
+
+        #receipt-details {
+            margin-top: 20px;
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            color: #00d4ff;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+
+        #dispute-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #dispute-section select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #ff4d4d;
+            background: #1a1a2e;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        #dispute-section button {
+            background: #ff4d4d;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        #dispute-section button:hover {
+            background: #ff1a1a;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Smart Parking Payment</h2>
+        
+        <!-- Pre-Registered Vehicle Dropdown -->
+        <label>Select Pre-Registered Vehicle</label>
+        <select id="vehicle-select" onchange="checkPreRegisteredVehicle()">
+            <option value="">Select Vehicle</option>
+            <option value="KA01AB1234">KA01AB1234</option>
+            <option value="KA02CD5678">KA02CD5678</option>
+            <option value="KA03EF9101">KA03EF9101</option>
+        </select>
+
+        <label>Parking Hours</label>
+        <input type="number" id="parking-hours" placeholder="Enter hours" required oninput="calculateBill()">
+        
+        <label>Predicted Bill (Rs.)</label>
+        <input type="number" id="amount" readonly>
+        
+        <h3>Select Payment Method</h3>
+        <div class="payment-methods">
+            <div class="payment-method" onclick="selectPaymentMethod('UPI')">
+                <i class="fas fa-qrcode"></i>
+                <span>UPI</span>
+                <input type="radio" name="payment-method" value="UPI">
+            </div>
+            <div class="payment-method" onclick="selectPaymentMethod('Credit Card')">
+                <i class="fas fa-credit-card"></i>
+                <span>Credit Card</span>
+                <input type="radio" name="payment-method" value="Credit Card">
+            </div>
+            <div class="payment-method" onclick="selectPaymentMethod('Debit Card')">
+                <i class="fas fa-credit-card"></i>
+                <span>Debit Card</span>
+                <input type="radio" name="payment-method" value="Debit Card">
+            </div>
+            <div class="payment-method" onclick="selectPaymentMethod('Digital Wallet')">
+                <i class="fas fa-wallet"></i>
+                <span>Digital Wallet</span>
+                <input type="radio" name="payment-method" value="Digital Wallet">
+            </div>
+        </div>
+        
+        <div id="payment-details-container"></div>
+        
+        <div>
+            <label>Promo Code (Optional)</label>
+            <input type="text" id="promo-code" placeholder="Enter promo code">
+        </div>
+        
+        <button onclick="processPayment()">Proceed to Pay</button>
+
+        <div id="receipt-actions">
+            <button onclick="downloadPDF()">Download Receipt as PDF</button>
+            <button onclick="printReceipt()">Print Receipt</button>
+        </div>
+        <pre id="receipt-details"></pre>
+
+        <div id="dispute-section">
+            <h3>Raise a Dispute</h3>
+            <select id="dispute-reason">
+                <option value="">Select a reason</option>
+                <option value="Incorrect Billing">Incorrect Billing</option>
+                <option value="Poor Service">Poor Service</option>
+                <option value="Unauthorized Charge">Unauthorized Charge</option>
+                <option value="Other">Other</option>
+            </select>
+            <button onclick="raiseDispute()">Raise Dispute</button>
+        </div>
+    </div>
+
+    <script>
+        let walletBalance = 1000; // Default wallet balance
+        let preRegisteredVehicles = {
+            "KA01AB1234": { balance: 500 },
+            "KA02CD5678": { balance: 1000 },
+            "KA03EF9101": { balance: 750 }
+        };
+
+        // Auto-deduction for pre-registered vehicles
+        function checkPreRegisteredVehicle() {
+            let vehicleNumber = document.getElementById('vehicle-select').value;
+            if (preRegisteredVehicles[vehicleNumber]) {
+                alert(`Pre-registered vehicle detected. Wallet balance: Rs. ${preRegisteredVehicles[vehicleNumber].balance}`);
+                walletBalance = preRegisteredVehicles[vehicleNumber].balance; // Update wallet balance
+            }
+        }
+
+        // Calculate parking bill
+        function calculateBill() {
+            let hours = document.getElementById('parking-hours').value;
+            let ratePerHour = 50; // Example rate
+            let amount = hours * ratePerHour;
+            document.getElementById('amount').value = amount;
+        }
+
+        // Select payment method
+        function selectPaymentMethod(method) {
+            document.querySelector(`input[value="${method}"]`).checked = true;
+            showPaymentFields();
+        }
+
+        // Show payment fields based on selected method
+        function showPaymentFields() {
+            let paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+            let container = document.getElementById('payment-details-container');
+            container.innerHTML = '';
+            
+            if (paymentMethod === 'UPI') {
+                container.innerHTML = '<label>UPI ID</label><input type="text" id="upi-id" placeholder="Enter UPI ID" required>';
+            } else if (paymentMethod === 'Credit Card' || paymentMethod === 'Debit Card') {
+                container.innerHTML = `
+                    <label>Card Number</label><input type="text" id="card-number" placeholder="Enter Card Number" required>
+                    <label>CVV</label><input type="text" id="cvv" placeholder="Enter CVV" required>
+                    <label>Expiry Date</label><input type="text" id="expiry-date" placeholder="MM/YY" required>
+                    <label>Card Holder Name</label><input type="text" id="card-holder" placeholder="Enter Card Holder Name" required>`;
+            } else if (paymentMethod === 'Digital Wallet') {
+                container.innerHTML = `<p>Wallet Balance: Rs. ${walletBalance}</p>`;
+            }
+        }
+
+        // Encrypt data (for demonstration purposes)
+        function encryptData(data) {
+            return btoa(data); // Base64 encoding (not secure for production)
+        }
+
+        // Process payment
+        function processPayment() {
+            let amount = parseFloat(document.getElementById('amount').value);
+            let paymentMethod = document.querySelector('input[name="payment-method"]:checked');
+            let promoCode = document.getElementById('promo-code').value;
+            
+            if (!amount || amount <= 0) {
+                alert("Please enter a valid parking duration.");
+                return;
+            }
+            
+            if (!paymentMethod) {
+                alert("Please select a payment method.");
+                return;
+            }
+            
+            let discount = 0;
+            if (promoCode === "DISCOUNT10") {
+                discount = 0.1 * amount; // 10% discount
+            } else if (promoCode === "PARKING") {
+                discount = 0.15 * amount; // 15% discount
+            }
+
+            let finalAmount = amount - discount;
+            let breakdownMessage = `Total Bill: Rs. ${amount.toFixed(2)}\nDiscount Applied: Rs. ${discount.toFixed(2)}\nFinal Payable Amount: Rs. ${finalAmount.toFixed(2)}\nPayment Method: ${paymentMethod.value}`;
+
+            // Encrypt payment details (for demonstration)
+            if (paymentMethod.value === 'Credit Card' || paymentMethod.value === 'Debit Card') {
+                let cardNumber = document.getElementById('card-number').value;
+                let encryptedCardNumber = encryptData(cardNumber);
+                breakdownMessage += `\nEncrypted Card Number: ${encryptedCardNumber}`;
+            }
+
+            if (paymentMethod.value === 'Digital Wallet') {
+                if (walletBalance < finalAmount) {
+                    alert("Insufficient wallet balance!");
+                    return;
+                }
+                walletBalance -= finalAmount;
+                breakdownMessage += `\nRemaining Wallet Balance: Rs. ${walletBalance.toFixed(2)}`;
+            }
+            
+            alert("Payment Successful!\n" + breakdownMessage);
+            document.getElementById('receipt-details').innerText = breakdownMessage;
+            document.getElementById('receipt-actions').style.display = 'block';
+            document.getElementById('dispute-section').style.display = 'block';
+        }
+
+        // Download PDF
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text(document.getElementById('receipt-details').innerText, 10, 10);
+            doc.save("payment_receipt.pdf");
+        }
+
+        // Print receipt
+        function printReceipt() {
+            window.print();
+        }
+
+        // Raise dispute
+        function raiseDispute() {
+            let disputeReason = document.getElementById('dispute-reason').value;
+            if (!disputeReason) {
+                alert("Please select a reason for the dispute.");
+                return;
+            }
+            let disputeDetails = `Dispute Raised!\nReason: ${disputeReason}\n\n${document.getElementById('receipt-details').innerText}`;
+            alert("Dispute Raised Successfully!\n" + disputeDetails);
+            document.getElementById('receipt-details').innerText = disputeDetails;
+        }
+    </script>
+</body>
+</html>

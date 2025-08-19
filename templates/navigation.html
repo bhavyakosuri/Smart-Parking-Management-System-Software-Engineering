@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text color */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #1e1e1e; /* Dark container background */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Darker shadow */
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #ffffff; /* White heading */
+        }
+
+        #directions {
+            margin-bottom: 20px;
+        }
+
+        #directionsList {
+            text-align: left;
+            margin: 20px auto;
+            max-width: 300px;
+            color: #e0e0e0; /* Light text color */
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff; /* Blue button */
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+
+        /* Dark theme for list items */
+        #directionsList li {
+            background-color: #2c2c2c; /* Dark list item background */
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            list-style-type: decimal;
+        }
+
+        #qrScanner {
+            margin-top: 20px;
+        }
+
+        #qrScanner video {
+            width: 100%;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Smart Parking Management System</h1>
+        <div id="directions">
+            <h2>Your Assigned Parking Slot: <span id="parkingSlot">A-12</span></h2>
+            <p>Follow the directions below to reach your parking slot:</p>
+            <ol id="directionsList">
+                <!-- Directions will be dynamically inserted here by JavaScript -->
+            </ol>
+        </div>
+        <button id="startNavigation">Start Navigation</button>
+        <button id="reroute">Reroute (Dynamic Obstruction)</button>
+        <button id="startVoiceGuide">Start Voice Guide</button>
+        <div id="qrScanner">
+            <h3>Scan QR Code to Confirm Slot</h3>
+            <video id="qrVideo" width="300" height="200"></video>
+            <p id="qrResult"></p>
+        </div>
+        <a href="\page1"><button style="padding: 8px; background-color: #565656; color: white; border-radius: 5px; border-color:transparent;">Home</button></a>
+    </div>
+
+    <script>
+        document.getElementById('startNavigation').addEventListener('click', function () {
+    const parkingSlotElement = document.getElementById('parkingSlot');
+    if (!parkingSlotElement) {
+        alert("Parking slot element not found.");
+        return;
+    }
+    
+    const parkingSlot = parkingSlotElement.innerText;
+    const directionsList = document.getElementById('directionsList');
+    if (!directionsList) {
+        alert("Directions list element not found.");
+        return;
+    }
+    
+    directionsList.innerHTML = '';
+    
+    const directions = [
+        "Enter the parking lot from the main entrance.",
+        "Turn right at the first intersection.",
+        "Continue straight for 50 meters.",
+        "Turn left at the second intersection.",
+        `Your parking slot ${parkingSlot} will be on your right.`
+    ];
+    
+    directions.forEach(direction => {
+        const li = document.createElement('li');
+        li.textContent = direction;
+        directionsList.appendChild(li);
+    });
+});
+
+// Dynamic Rerouting (Simulated)
+document.getElementById('reroute').addEventListener('click', function () {
+    alert("Rerouting due to obstruction... New route calculated.");
+    const directionsList = document.getElementById('directionsList');
+    if (!directionsList) {
+        alert("Directions list element not found.");
+        return;
+    }
+    
+    directionsList.innerHTML = '';
+    
+    const newDirections = [
+        "Enter the parking lot from the main entrance.",
+        "Turn left at the first intersection.",
+        "Continue straight for 30 meters.",
+        "Turn right at the second intersection.",
+        "Your parking slot A-12 will be on your left."
+    ];
+    
+    newDirections.forEach(direction => {
+        const li = document.createElement('li');
+        li.textContent = direction;
+        directionsList.appendChild(li);
+    });
+});
+
+// Voice-Guided Instructions
+document.getElementById('startVoiceGuide').addEventListener('click', function () {
+    const directions = [
+        "Enter the parking lot from the main entrance.",
+        "Turn right at the first intersection.",
+        "Continue straight for 50 meters.",
+        "Turn left at the second intersection.",
+        "Your parking slot A-12 will be on your right."
+    ];
+    
+    if ('speechSynthesis' in window) {
+        directions.forEach(text => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1;
+            speechSynthesis.speak(utterance);
+        });
+    } else {
+        alert("Your browser does not support voice guidance.");
+    }
+});
+
+// QR Code Scanning
+const qrVideo = document.getElementById('qrVideo');
+const qrResult = document.getElementById('qrResult');
+
+function startQRScanner() {
+    if (!qrVideo || !qrResult) {
+        alert("QR scanner elements not found.");
+        return;
+    }
+    
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(stream => {
+            qrVideo.srcObject = stream;
+            qrVideo.play();
+            scanQRCode();
+        })
+        .catch(err => {
+            qrResult.textContent = "Error accessing camera: " + err.message;
+        });
+}
+
+function scanQRCode() {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    
+    setInterval(() => {
+        if (!qrVideo.videoWidth || !qrVideo.videoHeight) return;
+        
+        canvas.width = qrVideo.videoWidth;
+        canvas.height = qrVideo.videoHeight;
+        context.drawImage(qrVideo, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        
+        if (code) {
+            qrResult.textContent = `Scanned QR Code: ${code.data}`;
+            alert(`Slot confirmed: ${code.data}`);
+        }
+    }, 100);
+}
+
+        // Start QR Scanner automatically (or add a button to start it)
+        startQRScanner();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+</body>
+</html>a
