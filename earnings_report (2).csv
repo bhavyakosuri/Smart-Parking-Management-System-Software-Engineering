@@ -1,0 +1,4 @@
+Slot Number,Renter Name,Date/Time Booked,Duration,Amount Paid,Status
+Slot 1,Jane Smith,March 27, 2025, 10:00 AM - 12:00 PM,2 hours,$50.00,Completed
+Slot 2,Mark Lee,March 27, 2025, 9:00 AM - 11:00 AM,2 hours,$60.00,Completed
+Slot 3,Alex Brown,March 27, 2025, 1:00 PM - 3:00 PM,2 hours,$70.50,Ongoing
