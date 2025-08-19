@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Lot Management - Stats</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: url('picccc.jpg') no-repeat center center/cover;
+            text-align: center;
+            color: #fff;
+        }
+        header {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 20px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        nav ul li {
+            display: inline;
+        }
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 18px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        nav ul li a:hover {
+            background: rgba(30, 58, 138, 0.7);
+            color: #fff;
+        }
+        main {
+            padding: 60px;
+        }
+        section {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 50px;
+            margin: 30px auto;
+            width: 70%;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            animation: fadeIn 1s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🚗 Parking Lot Management 🚀</h1>
+        <nav>
+            <ul>
+                <li><a href="index_owner.html">Home</a></li>
+                <li><a href="register_owner.html">Register</a></li>
+                <li><a href="contact_owner.html">Contact</a></li>
+                <li><a href="statistics_owner.html">Stats</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Real-Time Statistics</h2>
+            <canvas id="usageChart"></canvas>
+            <canvas id="bookingsChart"></canvas>
+        </section>
+    </main>
+
+    <script>
+        const ctxUsage = document.getElementById('usageChart').getContext('2d');
+        const ctxBookings = document.getElementById('bookingsChart').getContext('2d');
+
+        const usageChart = new Chart(ctxUsage, {
+            type: 'bar',
+            data: {
+                labels: ['Available Spaces', 'Total Spaces'],
+                datasets: [{
+                    label: 'Parking Lot Usage',
+                    data: [45, 120],
+                    backgroundColor: ['rgba(30, 58, 138, 0.6)', 'rgba(75, 192, 192, 0.6)'],
+                    borderColor: ['rgba(30, 58, 138, 1)', 'rgba(75, 192, 192, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        const bookingsChart = new Chart(ctxBookings, {
+            type: 'line',
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7'],
+                datasets: [{
+                    label: 'Bookings Over the Week',
+                    data: [10, 15, 5, 20, 30, 25, 35],
+                    fill: false,
+                    borderColor: 'rgba(30, 58, 138, 1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
